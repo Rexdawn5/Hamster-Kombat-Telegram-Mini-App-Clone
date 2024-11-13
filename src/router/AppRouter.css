@@ -1,0 +1,29 @@
+/* AppRouter.css */
+.app-background {
+    background-color: #000;
+    background-image: url('/spacedogsbackground1.png');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    color: white;
+    padding-bottom: 60px;
+  }
+  
+  .navbar {
+    display: flex;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #111;
+    padding: 10px 0;
+  }
+  
+  .link-style {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+  }
+  
