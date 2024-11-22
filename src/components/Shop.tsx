@@ -11,24 +11,15 @@ const Shop: React.FC = () => {
 
   return (
     <div style={{ padding: '20px', backgroundColor: '#000', color: '#f1f1f1', minHeight: '100vh' }}>
-      <h1 style={{ textAlign: 'center', fontSize: '24px', marginBottom: '20px' }}>Shop</h1>
-      <p style={{ textAlign: 'center', marginBottom: '30px' }}>Purchase points with TON</p>
+      <h1 style={{ textAlign: 'center', fontSize: '24px', marginBottom: '20px' }}>EARN🐶</h1>
+      <p style={{ textAlign: 'center', marginBottom: '30px' }}></p>
       
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-        {/* 2000 Points for 0.2 TON */}
-        <div style={pointOptionStyle} onClick={() => handlePurchase(2000, 0.2, 'https://t.me/send?start=IVPqJbt43iaV')}>
+        {/* Make a TON Transaction */}
+        <div style={pointOptionStyle} onClick={() => handlePurchase(2000, 0, 'https://t.me/send?start=IVPqJbt43iaV')}>
           <FaCoins style={iconStyle} />
-          <span style={textStyle}>2000 Points</span>
+          <span style={textStyle}>Make a TON Transaction</span>
           <FaRocket style={iconStyle} />
-          <span style={textStyle}>0.2 TON</span>
-        </div>
-
-        {/* 5000 Points for 0.5 TON */}
-        <div style={pointOptionStyle} onClick={() => handlePurchase(5000, 0.5, 'https://t.me/send?start=IVXQhfpiH900')}>
-          <FaCoins style={iconStyle} />
-          <span style={textStyle}>5000 Points</span>
-          <FaRocket style={iconStyle} />
-          <span style={textStyle}>0.5 TON</span>
         </div>
 
         {/* 10,000 Points for 1 TON */}

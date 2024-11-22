@@ -17,6 +17,6 @@
       "@components/*": ["src/components/*"], // Simplifies imports
     }
   },
-  "include": ["src"], // Ensures TypeScript includes everything in src
+  "include": ["src", "UserPoints.tsx"], // Ensures TypeScript includes everything in src
   "exclude": ["node_modules"]
 }

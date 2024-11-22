@@ -29,7 +29,7 @@ const AppRouter: React.FC = () => {
           </Link>
           <Link to="/shop" className="link-style">
             <FaCoins size={24} />
-            <span>Shop</span>
+            <span>Earn</span>
           </Link>
           <Link to="/wallet" className="link-style">
             <FaWallet size={24} />
@@ -42,3 +42,6 @@ const AppRouter: React.FC = () => {
 };
 
 export default AppRouter;
+
+
+

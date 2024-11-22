@@ -1,9 +1,7 @@
 import React from 'react';
 
 const InviteFriends: React.FC = () => {
-  const handleInvite = () => {
-    alert("Invite link copied! Share it with your friends to earn points!");
-  };
+  const inviteLink = "https://t.me/SpDogsBot/spacedogs";
 
   return (
     <div style={{ 
@@ -33,24 +31,27 @@ const InviteFriends: React.FC = () => {
           Invite your friends to earn points!
         </p>
 
-        {/* Interactive invite button with light gray background */}
-        <button 
-          onClick={handleInvite} 
+        {/* Shareable link */}
+        <a 
+          href={inviteLink} 
+          target="_blank" 
+          rel="noopener noreferrer"
           style={{
             backgroundColor: '#d3d3d3', // Light gray button
             color: '#000', 
             padding: '10px 20px', 
             borderRadius: '5px', 
             fontSize: '16px',
+            textDecoration: 'none',
+            display: 'inline-block',
             cursor: 'pointer',
-            border: 'none',
             transition: 'background-color 0.3s'
           }}
           onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c0c0c0')}
           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#d3d3d3')}
         >
-          Copy Invite Link 🚀
-        </button>
+          Share Invite Link 🚀
+        </a>
       </div>
     </div>
   );
