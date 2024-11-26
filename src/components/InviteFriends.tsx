@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const InviteFriends: React.FC = () => {
   const inviteLink = "https://t.me/SpDogsBot/spacedogs";
+  const [copied, setCopied] = useState<boolean>(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Reset "copied" state after 2 seconds
+    }).catch((error) => console.error('Error copying link:', error));
+  };
 
   return (
     <div style={{ 
@@ -45,13 +53,31 @@ const InviteFriends: React.FC = () => {
             textDecoration: 'none',
             display: 'inline-block',
             cursor: 'pointer',
-            transition: 'background-color 0.3s'
+            transition: 'background-color 0.3s',
+            marginBottom: '10px',
           }}
           onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c0c0c0')}
           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#d3d3d3')}
         >
           Share Invite Link 🚀
         </a>
+
+        {/* Copy button */}
+        <button
+          onClick={handleCopy}
+          style={{
+            backgroundColor: '#4CAF50', // Green button
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            fontSize: '16px',
+            cursor: 'pointer',
+            transition: 'background-color 0.3s',
+            marginTop: '10px',
+          }}
+        >
+          {copied ? 'Link Copied!' : 'Copy Invite Link'}
+        </button>
       </div>
     </div>
   );
