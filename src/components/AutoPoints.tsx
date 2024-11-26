@@ -133,11 +133,11 @@ const AutoPoints: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: '6px',
-          left: '67px', // Adjusted to make it close to the "U" icon
+          top: '4px',
+          left: '45px', // Adjusted to make it close to the "U" icon
           fontSize: '18px',
           color: 'white',
-          marginTop: '5px',
+          marginTop: '2px',
         }}
       >
         {username || ''}
@@ -147,8 +147,8 @@ const AutoPoints: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: '10px',
-          left: '15px',
+          top: '7px',
+          left: '5px',
           cursor: 'pointer',
           fontSize: '20px',
           color: 'white', // White text color
