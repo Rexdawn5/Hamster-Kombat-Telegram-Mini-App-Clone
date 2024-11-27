@@ -1,29 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { ref, set } from 'firebase/database';
-import database from '../firebaseConfig'; // Import your Firebase config
+import React from 'react';
+import { ref, push } from 'firebase/database';
+import database from '../firebaseConfig'; // Firebase configuration
 
 const InviteFriends: React.FC = () => {
-  const userId = "user123"; // Replace with dynamic user identification logic
-  const inviteLink = `https://your-backend-domain.com/handleReferral?ref=${userId}`;
-  const [copied, setCopied] = useState<boolean>(false);
+  const userId = 'user123'; // Replace with dynamic user identification logic
+  const inviteLink = `https://t.me/SpDogsBot/spacedogs?ref=${userId}`;
 
-  // Initialize user data in Firebase
-  useEffect(() => {
-    const userRef = ref(database, `users/${userId}`);
-    set(userRef, {
-      points: 2500, // User starts with 2500 points
-      inviteLink,
-    }).catch((error) => console.error("Error setting user data in Firebase:", error));
-  }, [inviteLink, userId]);
-
-  const handleCopy = () => {
-    navigator.clipboard
-      .writeText(inviteLink)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000); // Reset "copied" state after 2 seconds
-      })
-      .catch((error) => console.error('Error copying link:', error));
+  // Track invite link usage in Firebase
+  const handleInviteClick = () => {
+    const inviteRef = ref(database, `invites/${userId}`);
+    push(inviteRef, {
+      timestamp: Date.now(), // Track the timestamp of the invite
+      link: inviteLink,
+    })
+      .then(() => console.log('Invite tracked successfully in Firebase'))
+      .catch((error) => console.error('Error tracking invite in Firebase:', error));
   };
 
   return (
@@ -39,6 +30,7 @@ const InviteFriends: React.FC = () => {
         textAlign: 'center',
       }}
     >
+      {/* Black box */}
       <div
         style={{
           backgroundColor: '#333', // Black box
@@ -49,6 +41,7 @@ const InviteFriends: React.FC = () => {
           boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
         }}
       >
+        {/* Space-suited dog emoji at the top */}
         <div style={{ fontSize: '50px', marginBottom: '20px' }}>🐶🚀</div>
 
         <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Invite Friends</h1>
@@ -56,20 +49,28 @@ const InviteFriends: React.FC = () => {
           Invite your friends to earn points!
         </p>
 
-        <button
-          onClick={handleCopy}
+        {/* Shareable link */}
+        <a
+          href={inviteLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleInviteClick} // Track usage
           style={{
-            backgroundColor: '#4CAF50', // Green button
-            color: 'white',
+            backgroundColor: '#d3d3d3', // Light gray button
+            color: '#000',
             padding: '10px 20px',
             borderRadius: '5px',
             fontSize: '16px',
+            textDecoration: 'none',
+            display: 'inline-block',
             cursor: 'pointer',
             transition: 'background-color 0.3s',
           }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c0c0c0')}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#d3d3d3')}
         >
-          {copied ? 'Link Copied!' : 'Copy Invite Link'}
-        </button>
+          Share Invite Link 🚀
+        </a>
       </div>
     </div>
   );
