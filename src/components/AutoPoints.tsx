@@ -12,18 +12,31 @@ const AutoPoints: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const userId = urlParams.get('userId') || 'defaultUserId'; // Fallback to default ID
 
-  // Initialize or sync user data with Firebase
+  // Track new user in the backend
   useEffect(() => {
     const userRef = ref(database, `users/${userId}`);
+    const referrerId = urlParams.get('ref'); // Extract referrerId from the query params
 
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // If user is new, initialize with 2500 points
+        // If user is new, initialize with 2500 points and log referral if applicable
         set(userRef, {
           points: 2500,
           username: '',
+          referrer: referrerId || null, // Save referrer ID
         }).catch(console.error);
+
+        // Optionally, update the referrer's record (e.g., increment referral count)
+        if (referrerId) {
+          const referrerRef = ref(database, `users/${referrerId}/referrals`);
+          onValue(referrerRef, (referrerSnapshot) => {
+            const referralCount = referrerSnapshot.val() || 0;
+            update(ref(database, `users/${referrerId}`), {
+              referrals: referralCount + 1,
+            }).catch(console.error);
+          });
+        }
       } else {
         // Sync existing user data
         setPoints(data.points || 2500);
@@ -34,7 +47,7 @@ const AutoPoints: React.FC = () => {
     return () => {
       onValue(userRef, () => {}); // Cleanup listener
     };
-  }, [userId]);
+  }, [userId, urlParams]);
 
   // Increment points every 21 hours and update Firebase
   useEffect(() => {
@@ -50,21 +63,6 @@ const AutoPoints: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [userId]);
-
-  // Handle Join Telegram
-  const handleJoinTelegram = () => {
-    window.open('https://t.me/spacedogscommunity', '_blank');
-  };
-
-  // Handle Join X
-  const handleJoinX = () => {
-    window.open('https://x.com/spacedogsbot', '_blank');
-  };
-
-  // Handle Boost Community points
-  const handleBoostCommunity = () => {
-    window.open('https://t.me/boost/spacedogscommunity', '_blank');
-  };
 
   // Save the username to Firebase
   const saveUsername = () => {
@@ -174,27 +172,6 @@ const AutoPoints: React.FC = () => {
         alt="Space Dog"
         style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }}
       />
-
-      {/* Action Buttons */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          alignItems: 'center',
-          marginTop: '20px',
-        }}
-      >
-        <button onClick={handleJoinTelegram} style={buttonStyle}>
-          Join Telegram
-        </button>
-        <button onClick={handleJoinX} style={buttonStyle}>
-          Join X
-        </button>
-        <button onClick={handleBoostCommunity} style={buttonStyle}>
-          Boost Community spdogs
-        </button>
-      </div>
     </div>
   );
 };

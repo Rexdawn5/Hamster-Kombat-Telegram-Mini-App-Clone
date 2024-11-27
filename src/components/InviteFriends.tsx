@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ref, push } from 'firebase/database';
 import database from '../firebaseConfig'; // Firebase configuration
 
 const InviteFriends: React.FC = () => {
   const userId = 'user123'; // Replace with dynamic user identification logic
   const inviteLink = `https://t.me/SpDogsBot/spacedogs?ref=${userId}`;
+  const [copied, setCopied] = useState(false); // State to track if the link was copied
 
   // Track invite link usage in Firebase
   const handleInviteClick = () => {
@@ -15,6 +16,18 @@ const InviteFriends: React.FC = () => {
     })
       .then(() => console.log('Invite tracked successfully in Firebase'))
       .catch((error) => console.error('Error tracking invite in Firebase:', error));
+  };
+
+  // Copy invite link to clipboard
+  const handleCopyLink = () => {
+    navigator.clipboard
+      .writeText(inviteLink)
+      .then(() => {
+        setCopied(true); // Set copied state to true
+        handleInviteClick(); // Track usage in Firebase
+        setTimeout(() => setCopied(false), 2000); // Reset copied state after 2 seconds
+      })
+      .catch((error) => console.error('Error copying link:', error));
   };
 
   return (
@@ -49,28 +62,28 @@ const InviteFriends: React.FC = () => {
           Invite your friends to earn points!
         </p>
 
-        {/* Shareable link */}
-        <a
-          href={inviteLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleInviteClick} // Track usage
+        {/* Copy button */}
+        <button
+          onClick={handleCopyLink} // Copy link and track usage
           style={{
-            backgroundColor: '#d3d3d3', // Light gray button
+            backgroundColor: copied ? '#4CAF50' : '#d3d3d3', // Green when copied
             color: '#000',
             padding: '10px 20px',
             borderRadius: '5px',
             fontSize: '16px',
-            textDecoration: 'none',
-            display: 'inline-block',
+            border: 'none',
             cursor: 'pointer',
             transition: 'background-color 0.3s',
           }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c0c0c0')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#d3d3d3')}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = copied ? '#4CAF50' : '#c0c0c0')
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = copied ? '#4CAF50' : '#d3d3d3')
+          }
         >
-          Share Invite Link 🚀
-        </a>
+          {copied ? 'Link Copied!' : 'Copy Invite Link 🚀'}
+        </button>
       </div>
     </div>
   );
