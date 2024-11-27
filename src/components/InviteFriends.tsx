@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, update } from 'firebase/database';
-import database from '../firebaseConfig';
+import { ref, set } from 'firebase/database';
+import database from '../firebaseConfig'; // Import your Firebase config
 
 const InviteFriends: React.FC = () => {
   const userId = "user123"; // Replace with dynamic user identification logic
-  const inviteLink = `https://t.me/SpDogsBot/spacedogs?ref=${userId}`;
+  const inviteLink = `https://your-backend-domain.com/handleReferral?ref=${userId}`;
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Add referral link to Firebase
+  // Initialize user data in Firebase
   useEffect(() => {
     const userRef = ref(database, `users/${userId}`);
     set(userRef, {
+      points: 2500, // User starts with 2500 points
       inviteLink,
-      points: 2500, // Ensure the user starts with 2500 points
-    }).catch((error) => console.error("Error setting data in Firebase:", error));
+    }).catch((error) => console.error("Error setting user data in Firebase:", error));
   }, [inviteLink, userId]);
 
   const handleCopy = () => {
@@ -27,26 +27,28 @@ const InviteFriends: React.FC = () => {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '100vh', 
-      backgroundColor: '#000', // Black background
-      color: 'white', 
-      textAlign: 'center' 
-    }}>
-      {/* Black box */}
-      <div style={{ 
-        backgroundColor: '#333', // Black box
-        padding: '20px', 
-        borderRadius: '10px',
-        maxWidth: '400px', 
-        width: '90%',
-        boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
-      }}>
-        {/* Space-suited dog emoji at the top */}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#000', // Black background
+        color: 'white',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: '#333', // Black box
+          padding: '20px',
+          borderRadius: '10px',
+          maxWidth: '400px',
+          width: '90%',
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+        }}
+      >
         <div style={{ fontSize: '50px', marginBottom: '20px' }}>🐶🚀</div>
 
         <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Invite Friends</h1>
@@ -54,7 +56,6 @@ const InviteFriends: React.FC = () => {
           Invite your friends to earn points!
         </p>
 
-        {/* Copy button */}
         <button
           onClick={handleCopy}
           style={{
