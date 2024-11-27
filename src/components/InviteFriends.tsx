@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
-import { ref, push } from 'firebase/database';
-import database from '../firebaseConfig'; // Firebase configuration
+import React, { useState, useEffect } from 'react';
+import { ref, set, push, onValue } from 'firebase/database';
+import database from '../firebaseConfig'; // Adjust to your Firebase configuration
 
 const InviteFriends: React.FC = () => {
-  const userId = 'user123'; // Replace with dynamic user identification logic
+  // Simulate dynamic user ID for the inviter
+  const userId = 'user123'; // Replace with your dynamic user identification logic
+
+  // Invite link with referral ID
   const inviteLink = `https://t.me/SpDogsBot/spacedogs?ref=${userId}`;
   const [copied, setCopied] = useState(false); // State to track if the link was copied
+  const [invitedUsers, setInvitedUsers] = useState<string[]>([]); // List of invited users
 
-  // Track invite link usage in Firebase
+  // Track new invite usage in Firebase
   const handleInviteClick = () => {
     const inviteRef = ref(database, `invites/${userId}`);
     push(inviteRef, {
-      timestamp: Date.now(), // Track the timestamp of the invite
+      timestamp: Date.now(),
       link: inviteLink,
     })
       .then(() => console.log('Invite tracked successfully in Firebase'))
@@ -23,12 +27,29 @@ const InviteFriends: React.FC = () => {
     navigator.clipboard
       .writeText(inviteLink)
       .then(() => {
-        setCopied(true); // Set copied state to true
-        handleInviteClick(); // Track usage in Firebase
+        setCopied(true);
+        handleInviteClick(); // Track invite usage
         setTimeout(() => setCopied(false), 2000); // Reset copied state after 2 seconds
       })
       .catch((error) => console.error('Error copying link:', error));
   };
+
+  // Listen for new invited users in real-time
+  useEffect(() => {
+    const invitedUsersRef = ref(database, `invites/${userId}`);
+    onValue(invitedUsersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const users = Object.values(data).map((entry: any) => entry.link);
+        setInvitedUsers(users);
+      }
+    });
+
+    // Cleanup listener
+    return () => {
+      onValue(invitedUsersRef, () => {});
+    };
+  }, [userId]);
 
   return (
     <div
@@ -43,10 +64,9 @@ const InviteFriends: React.FC = () => {
         textAlign: 'center',
       }}
     >
-      {/* Black box */}
       <div
         style={{
-          backgroundColor: '#333', // Black box
+          backgroundColor: '#333',
           padding: '20px',
           borderRadius: '10px',
           maxWidth: '400px',
@@ -64,9 +84,9 @@ const InviteFriends: React.FC = () => {
 
         {/* Copy button */}
         <button
-          onClick={handleCopyLink} // Copy link and track usage
+          onClick={handleCopyLink}
           style={{
-            backgroundColor: copied ? '#4CAF50' : '#d3d3d3', // Green when copied
+            backgroundColor: copied ? '#4CAF50' : '#d3d3d3',
             color: '#000',
             padding: '10px 20px',
             borderRadius: '5px',
@@ -84,6 +104,22 @@ const InviteFriends: React.FC = () => {
         >
           {copied ? 'Link Copied!' : 'Copy Invite Link 🚀'}
         </button>
+
+        {/* List of invited users */}
+        <div style={{ marginTop: '20px', textAlign: 'left' }}>
+          <h2 style={{ fontSize: '20px' }}>Invited Users:</h2>
+          <ul style={{ paddingLeft: '20px' }}>
+            {invitedUsers.length > 0 ? (
+              invitedUsers.map((user, index) => (
+                <li key={index} style={{ fontSize: '16px', color: '#ddd' }}>
+                  {user}
+                </li>
+              ))
+            ) : (
+              <p style={{ fontSize: '16px', color: '#aaa' }}>No invites yet.</p>
+            )}
+          </ul>
+        </div>
       </div>
     </div>
   );
