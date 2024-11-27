@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ref, set, update } from 'firebase/database';
+import database from '../firebaseConfig';
 
 const InviteFriends: React.FC = () => {
-  const inviteLink = "https://t.me/SpDogsBot/spacedogs";
+  const userId = "user123"; // Replace with dynamic user identification logic
+  const inviteLink = `https://t.me/SpDogsBot/spacedogs?ref=${userId}`;
   const [copied, setCopied] = useState<boolean>(false);
 
+  // Add referral link to Firebase
+  useEffect(() => {
+    const userRef = ref(database, `users/${userId}`);
+    set(userRef, {
+      inviteLink,
+      points: 2500, // Ensure the user starts with 2500 points
+    }).catch((error) => console.error("Error setting data in Firebase:", error));
+  }, [inviteLink, userId]);
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(inviteLink).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Reset "copied" state after 2 seconds
-    }).catch((error) => console.error('Error copying link:', error));
+    navigator.clipboard
+      .writeText(inviteLink)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000); // Reset "copied" state after 2 seconds
+      })
+      .catch((error) => console.error('Error copying link:', error));
   };
 
   return (
@@ -39,29 +54,6 @@ const InviteFriends: React.FC = () => {
           Invite your friends to earn points!
         </p>
 
-        {/* Shareable link */}
-        <a 
-          href={inviteLink} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{
-            backgroundColor: '#d3d3d3', // Light gray button
-            color: '#000', 
-            padding: '10px 20px', 
-            borderRadius: '5px', 
-            fontSize: '16px',
-            textDecoration: 'none',
-            display: 'inline-block',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-            marginBottom: '10px',
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c0c0c0')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#d3d3d3')}
-        >
-          Share Invite Link 🚀
-        </a>
-
         {/* Copy button */}
         <button
           onClick={handleCopy}
@@ -73,7 +65,6 @@ const InviteFriends: React.FC = () => {
             fontSize: '16px',
             cursor: 'pointer',
             transition: 'background-color 0.3s',
-            marginTop: '10px',
           }}
         >
           {copied ? 'Link Copied!' : 'Copy Invite Link'}

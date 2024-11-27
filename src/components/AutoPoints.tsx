@@ -8,7 +8,9 @@ const AutoPoints: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
 
-  const userId = 'user123'; // Replace with dynamic user identification logic
+  // Extract userId from the shared link (e.g., "?userId=someId")
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = urlParams.get('userId') || 'defaultUserId'; // Fallback to default ID
 
   // Initialize or sync user data with Firebase
   useEffect(() => {
@@ -17,11 +19,13 @@ const AutoPoints: React.FC = () => {
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
+        // If user is new, initialize with 2500 points
         set(userRef, {
           points: 2500,
           username: '',
         }).catch(console.error);
       } else {
+        // Sync existing user data
         setPoints(data.points || 2500);
         setUsername(data.username || '');
       }
