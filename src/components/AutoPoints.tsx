@@ -4,13 +4,11 @@ import database from '../firebaseConfig'; // Adjust the path to your Firebase co
 import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
 
 const AutoPoints: React.FC = () => {
-  const [points, setPoints] = useState<number>(2500); // Initial points set to 1,500
-  const [boostAvailable, setBoostAvailable] = useState(true);
-  const [boostCooldown, setBoostCooldown] = useState(false);
-  const [username, setUsername] = useState<string>(''); // To hold username
-  const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false); // For toggling input visibility
+  const [points, setPoints] = useState<number>(2500);
+  const [username, setUsername] = useState<string>('');
+  const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
 
-  const userId = 'user123'; // Replace this with dynamic user identification logic
+  const userId = 'user123'; // Replace with dynamic user identification logic
 
   // Initialize or sync user data with Firebase
   useEffect(() => {
@@ -19,39 +17,24 @@ const AutoPoints: React.FC = () => {
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // Initialize user data in Firebase
         set(userRef, {
-          points: 1500,
-          username: '', // Initialize empty username
-          boostCooldownEnd: null, // Initialize cooldown
-          boostAvailable: true, // Initialize boost availability
+          points: 2500,
+          username: '',
         }).catch(console.error);
       } else {
-        setPoints(data.points || 2500); // Sync points from Firebase
-        setUsername(data.username || ''); // Sync username from Firebase
-
-        // Sync cooldown state
-        const now = Date.now();
-        if (data.boostCooldownEnd && now < data.boostCooldownEnd) {
-          setBoostCooldown(true);
-          setTimeout(() => setBoostCooldown(false), data.boostCooldownEnd - now);
-        } else {
-          setBoostCooldown(false);
-        }
-
-        setBoostAvailable(data.boostAvailable ?? true);
+        setPoints(data.points || 2500);
+        setUsername(data.username || '');
       }
     });
 
     return () => {
-      // Cleanup listener
-      onValue(userRef, () => {});
+      onValue(userRef, () => {}); // Cleanup listener
     };
   }, [userId]);
 
   // Increment points every 21 hours and update Firebase
   useEffect(() => {
-    const incrementPoints = 500; // Points given every 21 hours
+    const incrementPoints = 500;
 
     const interval = setInterval(() => {
       setPoints((prevPoints) => {
@@ -59,49 +42,24 @@ const AutoPoints: React.FC = () => {
         update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
         return newPoints;
       });
-    }, 21 * 60 * 60 * 1000); // 21 hours in milliseconds
+    }, 21 * 60 * 60 * 1000);
 
-    return () => clearInterval(interval); // Cleanup on component unmount
+    return () => clearInterval(interval);
   }, [userId]);
 
   // Handle Join Telegram
   const handleJoinTelegram = () => {
-    window.open('https://t.me/spacedogscommunity', '_blank'); // Open Telegram community link
+    window.open('https://t.me/spacedogscommunity', '_blank');
   };
 
   // Handle Join X
   const handleJoinX = () => {
-    window.open('https://x.com/spacedogsbot', '_blank'); // Open "Join X" link
+    window.open('https://x.com/spacedogsbot', '_blank');
   };
 
   // Handle Boost Community points
   const handleBoostCommunity = () => {
-    if (!boostAvailable || boostCooldown) return;
-
-    const now = Date.now();
-    const cooldownEnd = now + 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-    setPoints((prevPoints) => {
-      const newPoints = prevPoints + 0; // Increment points
-      update(ref(database, `users/${userId}`), {
-        points: newPoints,
-        boostCooldownEnd: cooldownEnd,
-        boostAvailable: false,
-      }).catch(console.error);
-      return newPoints;
-    });
-
-    setBoostAvailable(false); // Disable boost button for 7 hours
-    setTimeout(() => {
-      setBoostAvailable(true);
-      update(ref(database, `users/${userId}`), { boostAvailable: true }).catch(console.error);
-    }, 7 * 60 * 60 * 1000); // Re-enable after 7 hours
-
-    setBoostCooldown(true); // Start cooldown for 24 hours
-    setTimeout(() => {
-      setBoostCooldown(false);
-      update(ref(database, `users/${userId}`), { boostCooldownEnd: null }).catch(console.error);
-    }, 24 * 60 * 60 * 1000); // Cooldown ends in 24 hours
+    window.open('https://t.me/boost/spacedogscommunity', '_blank');
   };
 
   // Save the username to Firebase
@@ -133,11 +91,14 @@ const AutoPoints: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: '4px',
-          left: '45px', // Adjusted to make it close to the "U" icon
-          fontSize: '18px',
+          top: '8px',
+          left: '45px',
+          fontSize: '20px',
           color: 'white',
-          marginTop: '2px',
+          maxWidth: '60%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
         }}
       >
         {username || ''}
@@ -151,10 +112,10 @@ const AutoPoints: React.FC = () => {
           left: '5px',
           cursor: 'pointer',
           fontSize: '20px',
-          color: 'white', // White text color
-          backgroundColor: '#5a3fbe', // Light indigo background color
-          borderRadius: '40%', // Circular background
-          padding: '10px', // Add padding to make it circular
+          color: 'white',
+          backgroundColor: '#5a3fbe',
+          borderRadius: '50%',
+          padding: '10px',
         }}
         onClick={() => setIsUsernameInputVisible(!isUsernameInputVisible)}
       >
@@ -174,7 +135,8 @@ const AutoPoints: React.FC = () => {
               fontSize: '16px',
               borderRadius: '5px',
               marginBottom: '10px',
-              width: '250px',
+              width: '90%',
+              maxWidth: '300px',
             }}
           />
           <div>
@@ -199,7 +161,7 @@ const AutoPoints: React.FC = () => {
           fontSize: '24px',
         }}
       >
-        {points.toLocaleString()} spdogs {/* Formatted with commas */}
+        {points.toLocaleString()} spdogs
       </div>
 
       {/* Space Dog Image */}
@@ -225,28 +187,10 @@ const AutoPoints: React.FC = () => {
         <button onClick={handleJoinX} style={buttonStyle}>
           Join X
         </button>
-        <button
-          onClick={handleBoostCommunity}
-          style={boostAvailable && !boostCooldown ? buttonStyle : disabledButtonStyle}
-          disabled={!boostAvailable || boostCooldown}
-        >
-          {boostCooldown
-            ? 'Boost Cooldown Active'
-            : boostAvailable
-            ? 'Boost Community spdogs'
-            : 'task complete'}
+        <button onClick={handleBoostCommunity} style={buttonStyle}>
+          Boost Community spdogs
         </button>
       </div>
-
-      {/* Embed Boost link */}
-      <a
-        href="https://t.me/boost/spacedogscommunity"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ marginTop: '20px', color: '#3b3b5e', textDecoration: 'underline' }}
-      >
-      
-      </a>
     </div>
   );
 };
@@ -262,12 +206,6 @@ const buttonStyle: React.CSSProperties = {
   transition: 'background-color 0.3s',
   width: '80%',
   maxWidth: '300px',
-};
-
-const disabledButtonStyle: React.CSSProperties = {
-  ...buttonStyle,
-  backgroundColor: '#a3a3a3',
-  cursor: 'not-allowed',
 };
 
 export default AutoPoints;
