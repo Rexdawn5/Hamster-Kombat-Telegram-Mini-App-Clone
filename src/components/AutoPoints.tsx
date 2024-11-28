@@ -1,83 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, update, get } from 'firebase/database';
-import database from '../firebaseConfig';
-import spacedog from '../assets/spacedogs.png.png';
-import { FaUserAlt } from 'react-icons/fa';
-import { useSearchParams } from 'react-router-dom';
+import { ref, set, update, onValue } from 'firebase/database';
+import database from '../firebaseConfig'; // Adjust the path to your Firebase config
+import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
 
 const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500);
   const [username, setUsername] = useState<string>('');
-  const [isUsernameSaved, setIsUsernameSaved] = useState<boolean>(false);
-  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState<boolean>(false);
+  const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
   const [isInviteLinkVisible, setIsInviteLinkVisible] = useState<boolean>(false);
 
-  const [searchParams] = useSearchParams();
-  const userId = searchParams.get('id') || `user-${Date.now()}`;
+  // Extract userId from the shared invite link (e.g., "?userId=someId")
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = urlParams.get('userId') || 'defaultUserId'; // Fallback to default ID
 
-  // Firebase: Load or create user data
+  // Initialize or sync user data with Firebase
   useEffect(() => {
     const userRef = ref(database, `users/${userId}`);
-    get(userRef).then((snapshot) => {
-      if (!snapshot.exists()) {
-        // Create a new user profile with default points
+
+    onValue(userRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        // If user is new, initialize with 2500 points and empty username
         set(userRef, {
           points: 2500,
           username: '',
         }).catch(console.error);
       } else {
-        const data = snapshot.val();
+        // Sync existing user data
         setPoints(data.points || 2500);
         setUsername(data.username || '');
-        setIsUsernameSaved(!!data.username);
       }
     });
+
+    return () => {
+      onValue(userRef, () => {}); // Cleanup listener
+    };
   }, [userId]);
 
-  // Increment points every 21 hours
+  // Increment points every 21 hours and update Firebase
   useEffect(() => {
+    const incrementPoints = 500;
+
     const interval = setInterval(() => {
-      const incrementPoints = 500;
-      const newPoints = points + incrementPoints;
-      setPoints(newPoints);
-      update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
+      setPoints((prevPoints) => {
+        const newPoints = prevPoints + incrementPoints;
+        update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
+        return newPoints;
+      });
     }, 21 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [points, userId]);
+  }, [userId]);
 
-  // Handlers for username input and save
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsername(e.target.value);
-  };
-
-  const handleSaveUsername = () => {
-    if (username) {
-      const userRef = ref(database, `users/${userId}`);
-      update(userRef, { username })
-        .then(() => {
-          setIsUsernameSaved(true);
-          setIsUsernameModalOpen(false); // Close modal after saving
-        })
-        .catch(console.error);
+  // Save the username to Firebase
+  const saveUsername = () => {
+    if (username.trim()) {
+      update(ref(database, `users/${userId}`), { username }).catch(console.error);
     }
   };
 
-  const handleResetUsername = () => {
+  // Reset the username field
+  const resetUsername = () => {
     setUsername('');
-    setIsUsernameSaved(false);
-    const userRef = ref(database, `users/${userId}`);
-    update(userRef, { username: '' }).catch(console.error); // Reset username in Firebase
+    update(ref(database, `users/${userId}`), { username: '' }).catch(console.error);
   };
 
-  // Toggle Invite Link Visibility
-  const toggleInviteLink = () => {
-    setIsInviteLinkVisible((prev) => !prev);
+  // Copy invite link to clipboard
+  const handleCopyInviteLink = () => {
+    const inviteLink = 'https://t.me/SpDogsBot/spacedogs';
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      alert('Invite link copied to clipboard!');
+    }).catch((error) => {
+      console.error('Failed to copy invite link:', error);
+    });
   };
-
-  // Create a Telegram-compatible invite link
-  const telegramBotUsername = 'spacedogs'; // Replace with your bot's username
-  const inviteLink = `https://t.me/SpDogsBot/spacedogs?start=${userId}`;
 
   return (
     <div
@@ -91,20 +87,7 @@ const AutoPoints: React.FC = () => {
         textAlign: 'center',
       }}
     >
-      {/* Username Icon and Display */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '8px',
-          left: '10px',
-          fontSize: '24px',
-          color: 'white',
-          cursor: 'pointer',
-        }}
-        onClick={() => setIsUsernameModalOpen(true)}
-      >
-        <FaUserAlt />
-      </div>
+      {/* Username Display */}
       <div
         style={{
           position: 'absolute',
@@ -120,6 +103,52 @@ const AutoPoints: React.FC = () => {
       >
         {username || ''}
       </div>
+
+      {/* Username Input Toggle Icon */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '7px',
+          left: '5px',
+          cursor: 'pointer',
+          fontSize: '20px',
+          color: 'white',
+          backgroundColor: '#5a3fbe',
+          borderRadius: '50%',
+          padding: '10px',
+        }}
+        onClick={() => setIsUsernameInputVisible(!isUsernameInputVisible)}
+      >
+        U
+      </div>
+
+      {/* Username Input Field */}
+      {isUsernameInputVisible && (
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your username"
+            style={{
+              padding: '10px',
+              fontSize: '16px',
+              borderRadius: '5px',
+              marginBottom: '10px',
+              width: '90%',
+              maxWidth: '300px',
+            }}
+          />
+          <div>
+            <button onClick={saveUsername} style={buttonStyle}>
+              Save
+            </button>
+            <button onClick={resetUsername} style={buttonStyle}>
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Points Display */}
       <div
@@ -139,122 +168,58 @@ const AutoPoints: React.FC = () => {
       <img
         src={spacedog}
         alt="Space Dog"
-        style={{
-          width: '300px',
-          height: '300px',
-          objectFit: 'cover',
-          marginBottom: '20px',
-        }}
+        style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }}
       />
 
-      {/* Expandable Invite Link */}
+      {/* Invite Link Button */}
       <button
-        onClick={toggleInviteLink}
-        style={{
-          padding: '10px 20px',
-          margin: '20px',
-          borderRadius: '5px',
-          backgroundColor: '#4caf50',
-          color: '#fff',
-          border: 'none',
-          cursor: 'pointer',
-        }}
+        onClick={() => setIsInviteLinkVisible(!isInviteLinkVisible)}
+        style={buttonStyle}
       >
         {isInviteLinkVisible ? 'Hide Invite Link' : 'Show Invite Link'}
       </button>
 
+      {/* Invite Link Section */}
       {isInviteLinkVisible && (
         <div
           style={{
-            margin: '10px 0',
+            marginTop: '20px',
+            backgroundColor: '#f4f4f4',
             padding: '10px',
-            backgroundColor: '#fff',
-            borderRadius: '5px',
-            color: '#000',
+            borderRadius: '8px',
+            maxWidth: '400px',
             textAlign: 'center',
           }}
         >
-          <p>Invite your friends:</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input
-              type="text"
-              readOnly
-              value={inviteLink}
-              style={{
-                flexGrow: 1,
-                padding: '10px',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-              }}
-            />
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(inviteLink).then(() => {
-                  alert('Invite link copied to clipboard!');
-                });
-              }}
-              style={{
-                padding: '10px',
-                backgroundColor: '#4caf50',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Username Modal */}
-      {isUsernameModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <div
+          <p>Invite Link:</p>
+          <p>https://t.me/SpDogsBot/spacedogs</p>
+          <button
+            onClick={handleCopyInviteLink}
             style={{
-              backgroundColor: '#fff',
-              padding: '20px',
-              borderRadius: '10px',
-              textAlign: 'center',
+              ...buttonStyle,
+              marginTop: '10px',
+              backgroundColor: '#4CAF50',
             }}
           >
-            <h2>Set Your Username</h2>
-            <input
-              type="text"
-              value={username}
-              onChange={handleUsernameChange}
-              placeholder="Enter your username"
-              style={{ padding: '10px', width: '80%', marginBottom: '10px' }}
-            />
-            <div>
-              <button
-                onClick={handleSaveUsername}
-                style={{ padding: '10px', marginRight: '10px' }}
-              >
-                Save
-              </button>
-              <button onClick={handleResetUsername} style={{ padding: '10px' }}>
-                Reset
-              </button>
-            </div>
-          </div>
+            Copy Link
+          </button>
         </div>
       )}
     </div>
   );
+};
+
+const buttonStyle: React.CSSProperties = {
+  backgroundColor: '#3b3b5e',
+  color: '#fff',
+  padding: '12px 20px',
+  borderRadius: '8px',
+  border: 'none',
+  fontSize: '16px',
+  cursor: 'pointer',
+  transition: 'background-color 0.3s',
+  width: '80%',
+  maxWidth: '300px',
 };
 
 export default AutoPoints;
