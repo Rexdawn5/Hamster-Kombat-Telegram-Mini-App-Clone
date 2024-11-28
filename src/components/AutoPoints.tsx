@@ -11,14 +11,18 @@ const AutoPoints: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [joinedAt, setJoinedAt] = useState<number | null>(null);
 
-  const userId = localStorage.getItem('userId') || push(ref(database, 'users')).key!; // Generate a unique userId
+  // Parse `userId` from the URL if it exists
+  const queryParams = new URLSearchParams(window.location.search);
+  const invitedUserId = queryParams.get('spacedogsuserId');
 
-  // Save the new userId locally if it hasn't been saved
+  const userId = invitedUserId || localStorage.getItem('userId') || push(ref(database, 'users')).key!;
+
+  // Save the `userId` locally if it's not from an invite
   useEffect(() => {
-    if (!localStorage.getItem('userId')) {
+    if (!invitedUserId && !localStorage.getItem('userId')) {
       localStorage.setItem('userId', userId);
     }
-  }, [userId]);
+  }, [userId, invitedUserId]);
 
   const inviteLink = `https://t.me/SpDogsBot/spacedogsuserId=${userId}`;
 
@@ -28,7 +32,7 @@ const AutoPoints: React.FC = () => {
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // Create a new user profile
+        // Create a new user profile for the invited user
         const timestamp = Date.now();
         set(userRef, {
           points: 2500,
@@ -87,45 +91,13 @@ const AutoPoints: React.FC = () => {
     timestamp ? new Date(timestamp).toLocaleString() : 'Not available';
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        color: 'black',
-        textAlign: 'center',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: '8px',
-          left: '45px',
-          fontSize: '20px',
-          color: 'white',
-          maxWidth: '60%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'black', textAlign: 'center' }}>
+      <div style={{ position: 'absolute', top: '8px', left: '45px', fontSize: '20px', color: 'white', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {username || ''}
       </div>
 
       <div
-        style={{
-          position: 'absolute',
-          top: '7px',
-          left: '5px',
-          cursor: 'pointer',
-          fontSize: '20px',
-          color: 'white',
-          backgroundColor: '#5a3fbe',
-          borderRadius: '50%',
-          padding: '10px',
-        }}
+        style={{ position: 'absolute', top: '7px', left: '5px', cursor: 'pointer', fontSize: '20px', color: 'white', backgroundColor: '#5a3fbe', borderRadius: '50%', padding: '10px' }}
         onClick={() => setIsUsernameInputVisible(!isUsernameInputVisible)}
       >
         U
@@ -138,14 +110,7 @@ const AutoPoints: React.FC = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter your username"
-            style={{
-              padding: '10px',
-              fontSize: '16px',
-              borderRadius: '5px',
-              marginBottom: '10px',
-              width: '90%',
-              maxWidth: '300px',
-            }}
+            style={{ padding: '10px', fontSize: '16px', borderRadius: '5px', marginBottom: '10px', width: '90%', maxWidth: '300px' }}
           />
           <div>
             <button onClick={saveUsername} style={buttonStyle}>
@@ -158,62 +123,22 @@ const AutoPoints: React.FC = () => {
         </div>
       )}
 
-      <div
-        style={{
-          backgroundColor: '#3b3b5e',
-          color: '#fff',
-          padding: '15px 30px',
-          borderRadius: '10px',
-          marginBottom: '20px',
-          fontSize: '24px',
-        }}
-      >
+      <div style={{ backgroundColor: '#3b3b5e', color: '#fff', padding: '15px 30px', borderRadius: '10px', marginBottom: '20px', fontSize: '24px' }}>
         {points.toLocaleString()} spdogs
       </div>
 
-      <img
-        src={spacedog}
-        alt="Space Dog"
-        style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }}
-      />
+      <img src={spacedog} alt="Space Dog" style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }} />
 
       <p style={{ color: '#fff' }}>Joined At: {formatTimestamp(joinedAt)}</p>
 
-      <button
-        style={{
-          ...buttonStyle,
-          backgroundColor: isInviteVisible ? '#f0a500' : '#3b3b5e',
-        }}
-        onClick={() => setIsInviteVisible(!isInviteVisible)}
-      >
+      <button style={{ ...buttonStyle, backgroundColor: isInviteVisible ? '#f0a500' : '#3b3b5e' }} onClick={() => setIsInviteVisible(!isInviteVisible)}>
         {isInviteVisible ? 'Close Invite' : 'Invite Friends'}
       </button>
 
       {isInviteVisible && (
-        <div
-          style={{
-            marginTop: '10px',
-            padding: '10px',
-            backgroundColor: '#2b2b4e',
-            borderRadius: '8px',
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ color: '#fff', marginBottom: '10px' }}>
-            Copy your invite link below:
-          </p>
-          <input
-            type="text"
-            readOnly
-            value={inviteLink}
-            style={{
-              padding: '10px',
-              width: '90%',
-              maxWidth: '300px',
-              marginBottom: '10px',
-              textAlign: 'center',
-            }}
-          />
+        <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#2b2b4e', borderRadius: '8px', textAlign: 'center' }}>
+          <p style={{ color: '#fff', marginBottom: '10px' }}>Copy your invite link below:</p>
+          <input type="text" readOnly value={inviteLink} style={{ padding: '10px', width: '90%', maxWidth: '300px', marginBottom: '10px', textAlign: 'center' }} />
           <button onClick={handleCopyLink} style={buttonStyle}>
             {copied ? 'Copied!' : 'Copy Link'}
           </button>
