@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ref, set, update, onValue, push } from 'firebase/database';
 import database from '../firebaseConfig'; // Adjust the path to your Firebase config
 import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
+import { v4 as uuidv4 } from 'uuid'; // Install uuid library for unique IDs
 
 const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500);
@@ -11,7 +12,15 @@ const AutoPoints: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
-  const userId = urlParams.get('userId') || 'defaultUserId';
+  const inviterId = urlParams.get('userId'); // Get inviter's userId
+  const userId = localStorage.getItem('userId') || uuidv4(); // Create a unique ID for the user
+
+  // Save the new userId locally if it hasn't been saved
+  useEffect(() => {
+    if (!localStorage.getItem('userId')) {
+      localStorage.setItem('userId', userId);
+    }
+  }, [userId]);
 
   const inviteLink = `https://t.me/spacedogsbot?userId=${userId}`;
 
@@ -21,9 +30,12 @@ const AutoPoints: React.FC = () => {
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
+        // Create a new user profile
         set(userRef, {
           points: 2500,
           username: '',
+          inviterId: inviterId || null, // Link to inviter if present
+          joinedAt: Date.now(),
         }).catch(console.error);
       } else {
         setPoints(data.points || 2500);
@@ -34,7 +46,7 @@ const AutoPoints: React.FC = () => {
     return () => {
       onValue(userRef, () => {}); // Cleanup listener
     };
-  }, [userId]);
+  }, [userId, inviterId]);
 
   useEffect(() => {
     const incrementPoints = 500;
@@ -45,7 +57,7 @@ const AutoPoints: React.FC = () => {
         update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
         return newPoints;
       });
-    }, 21 * 60 * 60 * 1000);
+    }, 21 * 60 * 60 * 1000); // Increment every 21 hours
 
     return () => clearInterval(interval);
   }, [userId]);
