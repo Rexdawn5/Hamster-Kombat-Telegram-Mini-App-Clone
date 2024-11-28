@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, update, onValue } from 'firebase/database';
+import { ref, set, update, onValue, push } from 'firebase/database';
 import database from '../firebaseConfig'; // Adjust the path to your Firebase config
 import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
 
@@ -7,25 +7,25 @@ const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500);
   const [username, setUsername] = useState<string>('');
   const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
+  const [isInviteVisible, setIsInviteVisible] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
 
-  // Extract userId from the shared link (e.g., "?userId=someId")
   const urlParams = new URLSearchParams(window.location.search);
-  const userId = urlParams.get('userId') || 'defaultUserId'; // Fallback to default ID
+  const userId = urlParams.get('userId') || 'defaultUserId';
 
-  // Initialize or sync user data with Firebase
+  const inviteLink = `https://t.me/spacedogsbot?userId=${userId}`;
+
   useEffect(() => {
     const userRef = ref(database, `users/${userId}`);
 
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // If user is new, initialize with 2500 points
         set(userRef, {
           points: 2500,
           username: '',
         }).catch(console.error);
       } else {
-        // Sync existing user data
         setPoints(data.points || 2500);
         setUsername(data.username || '');
       }
@@ -36,7 +36,6 @@ const AutoPoints: React.FC = () => {
     };
   }, [userId]);
 
-  // Increment points every 21 hours and update Firebase
   useEffect(() => {
     const incrementPoints = 500;
 
@@ -51,29 +50,29 @@ const AutoPoints: React.FC = () => {
     return () => clearInterval(interval);
   }, [userId]);
 
-  // Handle Join Telegram
-  const handleJoinTelegram = () => {
-    window.open('https://t.me/spacedogscommunity', '_blank');
+  const handleCopyLink = () => {
+    navigator.clipboard
+      .writeText(inviteLink)
+      .then(() => {
+        setCopied(true);
+
+        const inviteRef = ref(database, `invites/${userId}`);
+        push(inviteRef, {
+          timestamp: Date.now(),
+          inviteLink,
+        }).catch(console.error);
+
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(console.error);
   };
 
-  // Handle Join X
-  const handleJoinX = () => {
-    window.open('https://x.com/spacedogsbot', '_blank');
-  };
-
-  // Handle Boost Community points
-  const handleBoostCommunity = () => {
-    window.open('https://t.me/boost/spacedogscommunity', '_blank');
-  };
-
-  // Save the username to Firebase
   const saveUsername = () => {
     if (username.trim()) {
       update(ref(database, `users/${userId}`), { username }).catch(console.error);
     }
   };
 
-  // Reset the username field
   const resetUsername = () => {
     setUsername('');
     update(ref(database, `users/${userId}`), { username: '' }).catch(console.error);
@@ -91,7 +90,6 @@ const AutoPoints: React.FC = () => {
         textAlign: 'center',
       }}
     >
-      {/* Username Display */}
       <div
         style={{
           position: 'absolute',
@@ -108,7 +106,6 @@ const AutoPoints: React.FC = () => {
         {username || ''}
       </div>
 
-      {/* Username Input Toggle Icon */}
       <div
         style={{
           position: 'absolute',
@@ -126,7 +123,6 @@ const AutoPoints: React.FC = () => {
         U
       </div>
 
-      {/* Username Input Field */}
       {isUsernameInputVisible && (
         <div style={{ marginBottom: '20px' }}>
           <input
@@ -154,7 +150,6 @@ const AutoPoints: React.FC = () => {
         </div>
       )}
 
-      {/* Points Display */}
       <div
         style={{
           backgroundColor: '#3b3b5e',
@@ -168,33 +163,52 @@ const AutoPoints: React.FC = () => {
         {points.toLocaleString()} spdogs
       </div>
 
-      {/* Space Dog Image */}
       <img
         src={spacedog}
         alt="Space Dog"
         style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }}
       />
 
-      {/* Action Buttons */}
-      <div
+      <button
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          alignItems: 'center',
-          marginTop: '20px',
+          ...buttonStyle,
+          backgroundColor: isInviteVisible ? '#f0a500' : '#3b3b5e',
         }}
+        onClick={() => setIsInviteVisible(!isInviteVisible)}
       >
-        <button onClick={handleJoinTelegram} style={buttonStyle}>
-          Join Telegram
-        </button>
-        <button onClick={handleJoinX} style={buttonStyle}>
-          Join X
-        </button>
-        <button onClick={handleBoostCommunity} style={buttonStyle}>
-          Boost Community spdogs
-        </button>
-      </div>
+        {isInviteVisible ? 'Close Invite' : 'Invite Friends'}
+      </button>
+
+      {isInviteVisible && (
+        <div
+          style={{
+            marginTop: '10px',
+            padding: '10px',
+            backgroundColor: '#2b2b4e',
+            borderRadius: '8px',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ color: '#fff', marginBottom: '10px' }}>
+            Copy your invite link below:
+          </p>
+          <input
+            type="text"
+            readOnly
+            value={inviteLink}
+            style={{
+              padding: '10px',
+              width: '90%',
+              maxWidth: '300px',
+              marginBottom: '10px',
+              textAlign: 'center',
+            }}
+          />
+          <button onClick={handleCopyLink} style={buttonStyle}>
+            {copied ? 'Copied!' : 'Copy Link'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -213,4 +227,3 @@ const buttonStyle: React.CSSProperties = {
 };
 
 export default AutoPoints;
-
