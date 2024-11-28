@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, update, onValue, push, get } from 'firebase/database';
+import { ref, set, update, get, push } from 'firebase/database';
 import database from '../firebaseConfig';
 import spacedog from '../assets/spacedogs.png.png';
 
@@ -10,28 +10,31 @@ const AutoPoints: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [joinedAt, setJoinedAt] = useState<number | null>(null);
 
-  // Determine user ID
+  // Get invited user ID from URL parameters
   const queryParams = new URLSearchParams(window.location.search);
   const invitedUserId = queryParams.get('spacedogsuserId');
+  
+  // If no invite ID, fallback to local user ID or create new ID
   const localUserId = localStorage.getItem('userId');
-  const [userId, setUserId] = useState<string>(localUserId || '');
+  const [userId, setUserId] = useState<string>(invitedUserId || localUserId || '');
 
   useEffect(() => {
-    let currentUserId = localUserId || invitedUserId || push(ref(database, 'users')).key!;
+    let currentUserId = invitedUserId || localUserId || push(ref(database, 'users')).key!;
+    setUserId(currentUserId);
 
+    // Store the userId in localStorage if it's a new user
     if (!localUserId) {
       localStorage.setItem('userId', currentUserId);
     }
 
-    setUserId(currentUserId);
-
     const userRef = ref(database, `users/${currentUserId}`);
     get(userRef).then((snapshot) => {
       if (!snapshot.exists()) {
-        // Generate username and initialize user
+        // Generate a unique username and set the initial points
         const generatedUsername = `SpaceDog${currentUserId.slice(-5)}`;
         const timestamp = Date.now();
 
+        // Create a new user profile in the database
         set(userRef, {
           points: 2500,
           username: generatedUsername,
@@ -52,13 +55,13 @@ const AutoPoints: React.FC = () => {
   const inviteLink = `https://t.me/SpDogsBot/spacedogsuserId=${userId}`;
 
   useEffect(() => {
-    // Increment points every 21 hours
+    // Increment points every 21 hours for the user
     const interval = setInterval(() => {
       const incrementPoints = 500;
       const newPoints = points + incrementPoints;
       setPoints(newPoints);
       update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-    }, 21 * 60 * 60 * 1000);
+    }, 21 * 60 * 60 * 1000); // 21 hours in milliseconds
 
     return () => clearInterval(interval);
   }, [points, userId]);
