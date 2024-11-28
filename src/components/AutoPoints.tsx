@@ -19,7 +19,6 @@ const AutoPoints: React.FC = () => {
   const [userId, setUserId] = useState<string>(invitedUserId || localUserId || '');
 
   useEffect(() => {
-    // Decide whether to fetch invited user profile or create a new user profile
     const currentUserId = invitedUserId || localUserId || push(ref(database, 'users')).key!;
     setUserId(currentUserId);
 
