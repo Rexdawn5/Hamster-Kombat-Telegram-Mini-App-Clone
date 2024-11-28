@@ -10,27 +10,28 @@ const AutoPoints: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [joinedAt, setJoinedAt] = useState<number | null>(null);
 
-  // Get `userId` from URL or local storage
+  // Determine user ID
   const queryParams = new URLSearchParams(window.location.search);
   const invitedUserId = queryParams.get('spacedogsuserId');
   const localUserId = localStorage.getItem('userId');
-
-  const userId = localUserId || invitedUserId || push(ref(database, 'users')).key!;
+  const [userId, setUserId] = useState<string>(localUserId || '');
 
   useEffect(() => {
-    // Store `userId` locally if not already stored
+    let currentUserId = localUserId || invitedUserId || push(ref(database, 'users')).key!;
+
     if (!localUserId) {
-      localStorage.setItem('userId', userId);
+      localStorage.setItem('userId', currentUserId);
     }
 
-    const userRef = ref(database, `users/${userId}`);
+    setUserId(currentUserId);
+
+    const userRef = ref(database, `users/${currentUserId}`);
     get(userRef).then((snapshot) => {
       if (!snapshot.exists()) {
-        // Generate a fixed username (e.g., SpaceDog12345)
-        const generatedUsername = `SpaceDog${userId.slice(-5)}`;
+        // Generate username and initialize user
+        const generatedUsername = `SpaceDog${currentUserId.slice(-5)}`;
         const timestamp = Date.now();
 
-        // Create a new user
         set(userRef, {
           points: 2500,
           username: generatedUsername,
@@ -46,18 +47,18 @@ const AutoPoints: React.FC = () => {
         setJoinedAt(data.joinedAt || null);
       }
     });
-  }, [userId, localUserId]);
+  }, [localUserId, invitedUserId]);
 
   const inviteLink = `https://t.me/SpDogsBot/spacedogsuserId=${userId}`;
 
   useEffect(() => {
-    // Update points periodically
+    // Increment points every 21 hours
     const interval = setInterval(() => {
       const incrementPoints = 500;
       const newPoints = points + incrementPoints;
       setPoints(newPoints);
       update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-    }, 21 * 60 * 60 * 1000); // Increment every 21 hours
+    }, 21 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [points, userId]);
