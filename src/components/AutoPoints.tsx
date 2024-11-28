@@ -9,16 +9,14 @@ const AutoPoints: React.FC = () => {
   const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
   const [isInviteVisible, setIsInviteVisible] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
+  const [joinedAt, setJoinedAt] = useState<number | null>(null);
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const inviterId = urlParams.get('userId'); // Get inviter's userId
-  
-  const userId = localStorage.getItem('userId') || push(ref(database, 'users')).key; // Use Firebase `push` to generate unique userId
+  const userId = localStorage.getItem('userId') || push(ref(database, 'users')).key!; // Generate a unique userId
 
   // Save the new userId locally if it hasn't been saved
   useEffect(() => {
     if (!localStorage.getItem('userId')) {
-      localStorage.setItem('userId', userId!); // Ensure `userId` is not null
+      localStorage.setItem('userId', userId);
     }
   }, [userId]);
 
@@ -30,23 +28,25 @@ const AutoPoints: React.FC = () => {
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // Create a new user profile if not already created
+        // Create a new user profile
+        const timestamp = Date.now();
         set(userRef, {
           points: 2500,
           username: '',
-          inviterId: inviterId || null, // Link to inviter if present
-          joinedAt: Date.now(),
+          joinedAt: timestamp,
         }).catch(console.error);
+        setJoinedAt(timestamp);
       } else {
         setPoints(data.points || 2500);
         setUsername(data.username || '');
+        setJoinedAt(data.joinedAt || null);
       }
     });
 
     return () => {
       onValue(userRef, () => {}); // Cleanup listener
     };
-  }, [userId, inviterId]);
+  }, [userId]);
 
   useEffect(() => {
     const incrementPoints = 500;
@@ -67,13 +67,6 @@ const AutoPoints: React.FC = () => {
       .writeText(inviteLink)
       .then(() => {
         setCopied(true);
-
-        const inviteRef = ref(database, `invites/${userId}`);
-        push(inviteRef, {
-          timestamp: Date.now(),
-          inviteLink,
-        }).catch(console.error);
-
         setTimeout(() => setCopied(false), 2000);
       })
       .catch(console.error);
@@ -89,6 +82,9 @@ const AutoPoints: React.FC = () => {
     setUsername('');
     update(ref(database, `users/${userId}`), { username: '' }).catch(console.error);
   };
+
+  const formatTimestamp = (timestamp: number | null) =>
+    timestamp ? new Date(timestamp).toLocaleString() : 'Not available';
 
   return (
     <div
@@ -181,6 +177,8 @@ const AutoPoints: React.FC = () => {
         style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }}
       />
 
+      <p style={{ color: '#fff' }}>Joined At: {formatTimestamp(joinedAt)}</p>
+
       <button
         style={{
           ...buttonStyle,
@@ -201,7 +199,7 @@ const AutoPoints: React.FC = () => {
             textAlign: 'center',
           }}
         >
-          <p style={{ color: '#fff', marginBottom: '10px' }} >
+          <p style={{ color: '#fff', marginBottom: '10px' }}>
             Copy your invite link below:
           </p>
           <input
