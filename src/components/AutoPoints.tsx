@@ -14,27 +14,27 @@ const AutoPoints: React.FC = () => {
   const queryParams = new URLSearchParams(window.location.search);
   const invitedUserId = queryParams.get('spacedogsuserId');
   
-  // If no invite ID, fallback to local user ID or create new ID
+  // Use local user ID or create a new one if no local user exists
   const localUserId = localStorage.getItem('userId');
   const [userId, setUserId] = useState<string>(invitedUserId || localUserId || '');
 
   useEffect(() => {
-    let currentUserId = invitedUserId || localUserId || push(ref(database, 'users')).key!;
+    // Decide whether to fetch invited user profile or create a new user profile
+    const currentUserId = invitedUserId || localUserId || push(ref(database, 'users')).key!;
     setUserId(currentUserId);
 
-    // Store the userId in localStorage if it's a new user
-    if (!localUserId) {
+    // If it's a new user, store userId in localStorage
+    if (!localUserId && !invitedUserId) {
       localStorage.setItem('userId', currentUserId);
     }
 
     const userRef = ref(database, `users/${currentUserId}`);
     get(userRef).then((snapshot) => {
       if (!snapshot.exists()) {
-        // Generate a unique username and set the initial points
+        // If the user doesn't exist, generate a new username and profile
         const generatedUsername = `SpaceDog${currentUserId.slice(-5)}`;
         const timestamp = Date.now();
 
-        // Create a new user profile in the database
         set(userRef, {
           points: 2500,
           username: generatedUsername,
@@ -44,6 +44,7 @@ const AutoPoints: React.FC = () => {
         setUsername(generatedUsername);
         setJoinedAt(timestamp);
       } else {
+        // If the user exists, fetch and set their profile data
         const data = snapshot.val();
         setPoints(data.points || 2500);
         setUsername(data.username || '');
