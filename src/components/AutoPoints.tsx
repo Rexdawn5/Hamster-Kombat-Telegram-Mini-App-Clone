@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, update, onValue, push } from 'firebase/database';
-import database from '../firebaseConfig'; // Adjust the path to your Firebase config
-import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
+import { ref, set, update, onValue, push, get } from 'firebase/database';
+import database from '../firebaseConfig';
+import spacedog from '../assets/spacedogs.png.png';
 
 const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500);
@@ -11,16 +11,30 @@ const AutoPoints: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [joinedAt, setJoinedAt] = useState<number | null>(null);
 
-  // Parse `userId` from the URL if it exists
   const queryParams = new URLSearchParams(window.location.search);
   const invitedUserId = queryParams.get('spacedogsuserId');
+  const localUserId = localStorage.getItem('userId');
 
-  const userId = invitedUserId || localStorage.getItem('userId') || push(ref(database, 'users')).key!;
+  const userId = localUserId || push(ref(database, 'users')).key!;
 
-  // Save the `userId` locally if it's not from an invite
   useEffect(() => {
-    if (!invitedUserId && !localStorage.getItem('userId')) {
+    if (!localUserId) {
       localStorage.setItem('userId', userId);
+    }
+
+    if (invitedUserId && invitedUserId !== userId) {
+      const invitedUserRef = ref(database, `users/${invitedUserId}`);
+      get(invitedUserRef).then((snapshot) => {
+        if (!snapshot.exists()) {
+          // Create a new profile for the invited user
+          const timestamp = Date.now();
+          set(invitedUserRef, {
+            points: 2500,
+            username: '',
+            joinedAt: timestamp,
+          }).catch(console.error);
+        }
+      });
     }
   }, [userId, invitedUserId]);
 
@@ -28,11 +42,13 @@ const AutoPoints: React.FC = () => {
 
   useEffect(() => {
     const userRef = ref(database, `users/${userId}`);
-
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) {
-        // Create a new user profile for the invited user
+      if (data) {
+        setPoints(data.points || 2500);
+        setUsername(data.username || '');
+        setJoinedAt(data.joinedAt || null);
+      } else {
         const timestamp = Date.now();
         set(userRef, {
           points: 2500,
@@ -40,30 +56,12 @@ const AutoPoints: React.FC = () => {
           joinedAt: timestamp,
         }).catch(console.error);
         setJoinedAt(timestamp);
-      } else {
-        setPoints(data.points || 2500);
-        setUsername(data.username || '');
-        setJoinedAt(data.joinedAt || null);
       }
     });
 
     return () => {
       onValue(userRef, () => {}); // Cleanup listener
     };
-  }, [userId]);
-
-  useEffect(() => {
-    const incrementPoints = 500;
-
-    const interval = setInterval(() => {
-      setPoints((prevPoints) => {
-        const newPoints = prevPoints + incrementPoints;
-        update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-        return newPoints;
-      });
-    }, 21 * 60 * 60 * 1000); // Increment every 21 hours
-
-    return () => clearInterval(interval);
   }, [userId]);
 
   const handleCopyLink = () => {
