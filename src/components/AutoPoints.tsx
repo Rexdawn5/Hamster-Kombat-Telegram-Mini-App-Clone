@@ -6,63 +6,61 @@ import spacedog from '../assets/spacedogs.png.png';
 const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500);
   const [username, setUsername] = useState<string>('');
-  const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
   const [isInviteVisible, setIsInviteVisible] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
   const [joinedAt, setJoinedAt] = useState<number | null>(null);
 
+  // Get `userId` from URL or local storage
   const queryParams = new URLSearchParams(window.location.search);
   const invitedUserId = queryParams.get('spacedogsuserId');
   const localUserId = localStorage.getItem('userId');
 
-  const userId = localUserId || push(ref(database, 'users')).key!;
+  const userId = localUserId || invitedUserId || push(ref(database, 'users')).key!;
 
   useEffect(() => {
+    // Store `userId` locally if not already stored
     if (!localUserId) {
       localStorage.setItem('userId', userId);
     }
 
-    if (invitedUserId && invitedUserId !== userId) {
-      const invitedUserRef = ref(database, `users/${invitedUserId}`);
-      get(invitedUserRef).then((snapshot) => {
-        if (!snapshot.exists()) {
-          // Create a new profile for the invited user
-          const timestamp = Date.now();
-          set(invitedUserRef, {
-            points: 2500,
-            username: '',
-            joinedAt: timestamp,
-          }).catch(console.error);
-        }
-      });
-    }
-  }, [userId, invitedUserId]);
+    const userRef = ref(database, `users/${userId}`);
+    get(userRef).then((snapshot) => {
+      if (!snapshot.exists()) {
+        // Generate a fixed username (e.g., SpaceDog12345)
+        const generatedUsername = `SpaceDog${userId.slice(-5)}`;
+        const timestamp = Date.now();
+
+        // Create a new user
+        set(userRef, {
+          points: 2500,
+          username: generatedUsername,
+          joinedAt: timestamp,
+        }).catch(console.error);
+
+        setUsername(generatedUsername);
+        setJoinedAt(timestamp);
+      } else {
+        const data = snapshot.val();
+        setPoints(data.points || 2500);
+        setUsername(data.username || '');
+        setJoinedAt(data.joinedAt || null);
+      }
+    });
+  }, [userId, localUserId]);
 
   const inviteLink = `https://t.me/SpDogsBot/spacedogsuserId=${userId}`;
 
   useEffect(() => {
-    const userRef = ref(database, `users/${userId}`);
-    onValue(userRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setPoints(data.points || 2500);
-        setUsername(data.username || '');
-        setJoinedAt(data.joinedAt || null);
-      } else {
-        const timestamp = Date.now();
-        set(userRef, {
-          points: 2500,
-          username: '',
-          joinedAt: timestamp,
-        }).catch(console.error);
-        setJoinedAt(timestamp);
-      }
-    });
+    // Update points periodically
+    const interval = setInterval(() => {
+      const incrementPoints = 500;
+      const newPoints = points + incrementPoints;
+      setPoints(newPoints);
+      update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
+    }, 21 * 60 * 60 * 1000); // Increment every 21 hours
 
-    return () => {
-      onValue(userRef, () => {}); // Cleanup listener
-    };
-  }, [userId]);
+    return () => clearInterval(interval);
+  }, [points, userId]);
 
   const handleCopyLink = () => {
     navigator.clipboard
@@ -74,17 +72,6 @@ const AutoPoints: React.FC = () => {
       .catch(console.error);
   };
 
-  const saveUsername = () => {
-    if (username.trim()) {
-      update(ref(database, `users/${userId}`), { username }).catch(console.error);
-    }
-  };
-
-  const resetUsername = () => {
-    setUsername('');
-    update(ref(database, `users/${userId}`), { username: '' }).catch(console.error);
-  };
-
   const formatTimestamp = (timestamp: number | null) =>
     timestamp ? new Date(timestamp).toLocaleString() : 'Not available';
 
@@ -94,33 +81,6 @@ const AutoPoints: React.FC = () => {
         {username || ''}
       </div>
 
-      <div
-        style={{ position: 'absolute', top: '7px', left: '5px', cursor: 'pointer', fontSize: '20px', color: 'white', backgroundColor: '#5a3fbe', borderRadius: '50%', padding: '10px' }}
-        onClick={() => setIsUsernameInputVisible(!isUsernameInputVisible)}
-      >
-        U
-      </div>
-
-      {isUsernameInputVisible && (
-        <div style={{ marginBottom: '20px' }}>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
-            style={{ padding: '10px', fontSize: '16px', borderRadius: '5px', marginBottom: '10px', width: '90%', maxWidth: '300px' }}
-          />
-          <div>
-            <button onClick={saveUsername} style={buttonStyle}>
-              Save
-            </button>
-            <button onClick={resetUsername} style={buttonStyle}>
-              Reset
-            </button>
-          </div>
-        </div>
-      )}
-
       <div style={{ backgroundColor: '#3b3b5e', color: '#fff', padding: '15px 30px', borderRadius: '10px', marginBottom: '20px', fontSize: '24px' }}>
         {points.toLocaleString()} spdogs
       </div>
@@ -129,7 +89,7 @@ const AutoPoints: React.FC = () => {
 
       <p style={{ color: '#fff' }}>Joined At: {formatTimestamp(joinedAt)}</p>
 
-      <button style={{ ...buttonStyle, backgroundColor: isInviteVisible ? '#f0a500' : '#3b3b5e' }} onClick={() => setIsInviteVisible(!isInviteVisible)}>
+      <button style={{ backgroundColor: isInviteVisible ? '#f0a500' : '#3b3b5e', color: '#fff', padding: '12px 20px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' }} onClick={() => setIsInviteVisible(!isInviteVisible)}>
         {isInviteVisible ? 'Close Invite' : 'Invite Friends'}
       </button>
 
@@ -137,26 +97,13 @@ const AutoPoints: React.FC = () => {
         <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#2b2b4e', borderRadius: '8px', textAlign: 'center' }}>
           <p style={{ color: '#fff', marginBottom: '10px' }}>Copy your invite link below:</p>
           <input type="text" readOnly value={inviteLink} style={{ padding: '10px', width: '90%', maxWidth: '300px', marginBottom: '10px', textAlign: 'center' }} />
-          <button onClick={handleCopyLink} style={buttonStyle}>
+          <button onClick={handleCopyLink} style={{ backgroundColor: '#3b3b5e', color: '#fff', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>
             {copied ? 'Copied!' : 'Copy Link'}
           </button>
         </div>
       )}
     </div>
   );
-};
-
-const buttonStyle: React.CSSProperties = {
-  backgroundColor: '#3b3b5e',
-  color: '#fff',
-  padding: '12px 20px',
-  borderRadius: '8px',
-  border: 'none',
-  fontSize: '16px',
-  cursor: 'pointer',
-  transition: 'background-color 0.3s',
-  width: '80%',
-  maxWidth: '300px',
 };
 
 export default AutoPoints;
