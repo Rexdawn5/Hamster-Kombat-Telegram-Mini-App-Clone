@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ref, set, update, onValue, push } from 'firebase/database';
 import database from '../firebaseConfig'; // Adjust the path to your Firebase config
 import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
-import { v4 as uuidv4 } from 'uuid'; // Install uuid library for unique IDs
 
 const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500);
@@ -13,16 +12,17 @@ const AutoPoints: React.FC = () => {
 
   const urlParams = new URLSearchParams(window.location.search);
   const inviterId = urlParams.get('userId'); // Get inviter's userId
-  const userId = localStorage.getItem('userId') || uuidv4(); // Create a unique ID for the user
+  
+  const userId = localStorage.getItem('userId') || push(ref(database, 'users')).key; // Use Firebase `push` to generate unique userId
 
   // Save the new userId locally if it hasn't been saved
   useEffect(() => {
     if (!localStorage.getItem('userId')) {
-      localStorage.setItem('userId', userId);
+      localStorage.setItem('userId', userId!); // Ensure `userId` is not null
     }
   }, [userId]);
 
-  const inviteLink = `https://t.me/spacedogsbot?userId=${userId}`;
+  const inviteLink = `https://t.me/SpDogsBot/spacedogsuserId=${userId}`;
 
   useEffect(() => {
     const userRef = ref(database, `users/${userId}`);
@@ -30,7 +30,7 @@ const AutoPoints: React.FC = () => {
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // Create a new user profile
+        // Create a new user profile if not already created
         set(userRef, {
           points: 2500,
           username: '',
@@ -201,7 +201,7 @@ const AutoPoints: React.FC = () => {
             textAlign: 'center',
           }}
         >
-          <p style={{ color: '#fff', marginBottom: '10px' }}>
+          <p style={{ color: '#fff', marginBottom: '10px' }} >
             Copy your invite link below:
           </p>
           <input
