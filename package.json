@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@types/react-router-dom": "^5.3.3",
+    "@types/telegram-web-app": "^7.10.1",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
