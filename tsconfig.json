@@ -15,6 +15,7 @@
     "baseUrl": "./",
     "paths": {
       "@components/*": ["src/components/*"], // Simplifies imports
+                      
     }
   },
   "include": ["src", "UserPoints.tsx"], // Ensures TypeScript includes everything in src

@@ -1,33 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const InviteFriends: React.FC = () => {
-  const userId = `user_${Math.random().toString(36).substr(2, 9)}`; // Generate a unique user ID
-  const inviteLink = `https://t.me/SpDogsBot/spacedogs?userId=${userId}`;
+  const [telegramId, setTelegramId] = useState<string>(''); // Telegram ID
+  const [username, setUsername] = useState<string>(''); // Telegram username
+  const [inviteLink, setInviteLink] = useState<string>(''); // Invite link
+
+  useEffect(() => {
+    // Initialize Telegram Web App
+    const tg = window.Telegram.WebApp;
+
+    // Ensure the WebApp is ready
+    tg.ready();
+
+    // Fetch Telegram user data using initDataUnsafe
+    const userData = tg.initDataUnsafe?.user || {};
+    const fetchedUsername = userData.username || 'Guest';
+    const fetchedTelegramId = userData.id || 'Unknown';
+
+    setUsername(fetchedUsername);
+    setTelegramId(fetchedTelegramId);
+
+    // Generate invite link
+    const baseUrl = `https://t.me/SpDogsBot/spacedogs`;
+    const inviteUrl = `${baseUrl}?inviterId=${fetchedTelegramId}`;
+    setInviteLink(inviteUrl);
+  }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', backgroundColor: '#000', color: 'white' }}>
-      <div style={{ backgroundColor: '#333', padding: '20px', borderRadius: '10px', width: '90%', maxWidth: '400px', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-        <div style={{ fontSize: '50px', marginBottom: '20px' }}>🐶🚀</div>
-        <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Invite Friends</h1>
-        <p style={{ fontSize: '18px', marginBottom: '30px' }}>Invite your friends to earn points!</p>
-        <a
-          href={inviteLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            backgroundColor: '#d3d3d3',
-            color: '#000',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            fontSize: '16px',
-            textDecoration: 'none',
-            display: 'inline-block',
-            cursor: 'pointer',
-          }}
-        >
-          Share Invite Link 🚀
-        </a>
-      </div>
+    <div>
+      <h1>Invite Friends</h1>
+      <p>Share this link with your friends:</p>
+      <a href={inviteLink} target="_blank" rel="noopener noreferrer">
+        {inviteLink}
+      </a>
+      <p>Logged in as: {username}</p>
     </div>
   );
 };
