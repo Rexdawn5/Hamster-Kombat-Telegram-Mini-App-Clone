@@ -1,55 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { ref, set, update, onValue } from 'firebase/database';
-import database from '../firebaseConfig'; // Firebase configuration
+import database from '../firebaseConfig'; // Adjust the path to your Firebase config
 import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
-
-declare global {
-  interface Window {
-    Telegram: any;
-  }
-}
 
 const AutoPoints: React.FC = () => {
   const [points, setPoints] = useState<number>(2500); // Default points
-  const [username, setUsername] = useState<string>(''); // Telegram username
-  const [telegramId, setTelegramId] = useState<string>(''); // Telegram ID
+  const [username, setUsername] = useState<string>(''); // User's username
   const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
 
+  // Extract inviter ID (if present) and current user ID
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviterId = urlParams.get('userId'); // Inviter's ID
+  const userId = `user_${Math.random().toString(36).substr(2, 9)}`; // Generate a unique user ID
+
   useEffect(() => {
-    // Initialize Telegram Web App
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+    const userRef = ref(database, `users/${userId}`);
 
-    // Fetch user data
-    const userData = tg.initDataUnsafe?.user || {};
-    const fetchedUsername = userData.username || 'Guest';
-    const fetchedTelegramId = userData.id || 'Unknown';
-
-    setUsername(fetchedUsername);
-    setTelegramId(fetchedTelegramId);
-
-    // Sync with Firebase
-    const userRef = ref(database, `users/${fetchedTelegramId}`);
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // Initialize new user profile in Firebase
+        // Initialize new user profile
         set(userRef, {
           points: 2500,
-          username: fetchedUsername,
-          telegramId: fetchedTelegramId,
+          username: '',
+          inviterId: inviterId || null, // Store inviter ID if available
+          telegramId: '123456789', // Replace with actual Telegram ID logic
         }).catch(console.error);
       } else {
         // Sync existing user data
         setPoints(data.points || 2500);
-        setUsername(data.username || fetchedUsername);
+        setUsername(data.username || '');
       }
     });
 
     return () => {
       onValue(userRef, () => {}); // Cleanup listener
     };
-  }, []);
+  }, [inviterId, userId]);
 
   // Increment points every 21 hours
   useEffect(() => {
@@ -57,18 +44,18 @@ const AutoPoints: React.FC = () => {
     const interval = setInterval(() => {
       setPoints((prevPoints) => {
         const newPoints = prevPoints + incrementPoints;
-        update(ref(database, `users/${telegramId}`), { points: newPoints }).catch(console.error);
+        update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
         return newPoints;
       });
     }, 21 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [telegramId]);
+  }, [userId]);
 
   // Save the username
   const saveUsername = () => {
     if (username.trim()) {
-      update(ref(database, `users/${telegramId}`), { username }).catch(console.error);
+      update(ref(database, `users/${userId}`), { username }).catch(console.error);
     }
   };
 
