@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { FaDog, FaCoins, FaWallet } from 'react-icons/fa'; // Removed FaTasks
+import { FaDog, FaCoins, FaWallet, FaUserFriends } from 'react-icons/fa';
 import AutoPoints from '../components/AutoPoints';
 import Shop from '../components/Shop';
 import ConnectWallet from '../components/ConnectWallet';
+import InviteFriends from '../components/InviteFriends'; // New import
 import './AppRouter.css';
 
 const AppRouter: React.FC = () => {
@@ -14,6 +15,7 @@ const AppRouter: React.FC = () => {
           <Route path="/" element={<AutoPoints />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/wallet" element={<ConnectWallet />} />
+          <Route path="/invite" element={<InviteFriends />} /> {/* New Route */}
         </Routes>
 
         <nav className="navbar">
@@ -29,6 +31,10 @@ const AppRouter: React.FC = () => {
             <FaWallet size={24} />
             <span>Wallet</span>
           </Link>
+          <Link to="/invite" className="link-style">
+            <FaUserFriends size={24} />
+            <span>Invite</span>
+          </Link> {/* New Navbar Link */}
         </nav>
       </div>
     </Router>

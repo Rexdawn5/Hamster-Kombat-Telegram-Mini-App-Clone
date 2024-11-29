@@ -1,128 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { ref, set, update, onValue } from 'firebase/database';
-import database from '../firebaseConfig'; // Adjust the path to your Firebase config
+import database from '../firebaseConfig'; // Firebase configuration
 import spacedog from '../assets/spacedogs.png.png'; // Adjust the path to your image
 
+declare global {
+  interface Window {
+    Telegram: any;
+  }
+}
+
 const AutoPoints: React.FC = () => {
-  const [points, setPoints] = useState<number>(2500);
-  const [username, setUsername] = useState<string>('');
+  const [points, setPoints] = useState<number>(2500); // Default points
+  const [username, setUsername] = useState<string>(''); // Telegram username
+  const [telegramId, setTelegramId] = useState<string>(''); // Telegram ID
   const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
-  const [isInviteLinkVisible, setIsInviteLinkVisible] = useState<boolean>(false);
 
-  // Extract userId from the shared invite link (e.g., "?userId=someId")
-  const urlParams = new URLSearchParams(window.location.search);
-  const userId = urlParams.get('userId') || 'defaultUserId'; // Fallback to default ID
-
-  // Initialize or sync user data with Firebase
   useEffect(() => {
-    const userRef = ref(database, `users/${userId}`);
+    // Initialize Telegram Web App
+    const tg = window.Telegram.WebApp;
+    tg.ready();
 
+    // Fetch user data
+    const userData = tg.initDataUnsafe?.user || {};
+    const fetchedUsername = userData.username || 'Guest';
+    const fetchedTelegramId = userData.id || 'Unknown';
+
+    setUsername(fetchedUsername);
+    setTelegramId(fetchedTelegramId);
+
+    // Sync with Firebase
+    const userRef = ref(database, `users/${fetchedTelegramId}`);
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // If user is new, initialize with 2500 points and empty username
+        // Initialize new user profile in Firebase
         set(userRef, {
           points: 2500,
-          username: '',
+          username: fetchedUsername,
+          telegramId: fetchedTelegramId,
         }).catch(console.error);
       } else {
         // Sync existing user data
         setPoints(data.points || 2500);
-        setUsername(data.username || '');
+        setUsername(data.username || fetchedUsername);
       }
     });
 
     return () => {
       onValue(userRef, () => {}); // Cleanup listener
     };
-  }, [userId]);
+  }, []);
 
-  // Increment points every 21 hours and update Firebase
+  // Increment points every 21 hours
   useEffect(() => {
     const incrementPoints = 500;
-
     const interval = setInterval(() => {
       setPoints((prevPoints) => {
         const newPoints = prevPoints + incrementPoints;
-        update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
+        update(ref(database, `users/${telegramId}`), { points: newPoints }).catch(console.error);
         return newPoints;
       });
     }, 21 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [telegramId]);
 
-  // Save the username to Firebase
+  // Save the username
   const saveUsername = () => {
     if (username.trim()) {
-      update(ref(database, `users/${userId}`), { username }).catch(console.error);
+      update(ref(database, `users/${telegramId}`), { username }).catch(console.error);
     }
   };
 
-  // Reset the username field
-  const resetUsername = () => {
-    setUsername('');
-    update(ref(database, `users/${userId}`), { username: '' }).catch(console.error);
-  };
-
-  // Copy invite link to clipboard
-  const handleCopyInviteLink = () => {
-    const inviteLink = 'https://t.me/SpDogsBot/spacedogs';
-    navigator.clipboard.writeText(inviteLink).then(() => {
-      alert('Invite link copied to clipboard!');
-    }).catch((error) => {
-      console.error('Failed to copy invite link:', error);
-    });
-  };
-
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        color: 'black',
-        textAlign: 'center',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh' }}>
       {/* Username Display */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '8px',
-          left: '45px',
-          fontSize: '20px',
-          color: 'white',
-          maxWidth: '60%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      <div style={{ position: 'absolute', top: '8px', left: '45px', fontSize: '20px', color: 'white' }}>
         {username || ''}
       </div>
 
-      {/* Username Input Toggle Icon */}
+      {/* Username Input */}
       <div
-        style={{
-          position: 'absolute',
-          top: '7px',
-          left: '5px',
-          cursor: 'pointer',
-          fontSize: '20px',
-          color: 'white',
-          backgroundColor: '#5a3fbe',
-          borderRadius: '50%',
-          padding: '10px',
-        }}
+        style={{ position: 'absolute', top: '7px', left: '5px', cursor: 'pointer', backgroundColor: '#5a3fbe', borderRadius: '50%', padding: '10px' }}
         onClick={() => setIsUsernameInputVisible(!isUsernameInputVisible)}
       >
         U
       </div>
-
-      {/* Username Input Field */}
       {isUsernameInputVisible && (
         <div style={{ marginBottom: '20px' }}>
           <input
@@ -130,96 +93,22 @@ const AutoPoints: React.FC = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter your username"
-            style={{
-              padding: '10px',
-              fontSize: '16px',
-              borderRadius: '5px',
-              marginBottom: '10px',
-              width: '90%',
-              maxWidth: '300px',
-            }}
+            style={{ padding: '10px', fontSize: '16px', borderRadius: '5px', marginBottom: '10px' }}
           />
-          <div>
-            <button onClick={saveUsername} style={buttonStyle}>
-              Save
-            </button>
-            <button onClick={resetUsername} style={buttonStyle}>
-              Reset
-            </button>
-          </div>
+          <button onClick={saveUsername} style={{ backgroundColor: '#3b3b5e', color: '#fff', padding: '12px 20px', borderRadius: '8px' }}>
+            Save
+          </button>
         </div>
       )}
 
       {/* Points Display */}
-      <div
-        style={{
-          backgroundColor: '#3b3b5e',
-          color: '#fff',
-          padding: '15px 30px',
-          borderRadius: '10px',
-          marginBottom: '20px',
-          fontSize: '24px',
-        }}
-      >
+      <div style={{ backgroundColor: '#3b3b5e', color: '#fff', padding: '15px 30px', borderRadius: '10px', fontSize: '24px' }}>
         {points.toLocaleString()} spdogs
       </div>
 
-      {/* Space Dog Image */}
-      <img
-        src={spacedog}
-        alt="Space Dog"
-        style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }}
-      />
-
-      {/* Invite Link Button */}
-      <button
-        onClick={() => setIsInviteLinkVisible(!isInviteLinkVisible)}
-        style={buttonStyle}
-      >
-        {isInviteLinkVisible ? 'Hide Invite Link' : 'Show Invite Link'}
-      </button>
-
-      {/* Invite Link Section */}
-      {isInviteLinkVisible && (
-        <div
-          style={{
-            marginTop: '20px',
-            backgroundColor: '#f4f4f4',
-            padding: '10px',
-            borderRadius: '8px',
-            maxWidth: '400px',
-            textAlign: 'center',
-          }}
-        >
-          <p>Invite Link:</p>
-          <p>https://t.me/SpDogsBot/spacedogs</p>
-          <button
-            onClick={handleCopyInviteLink}
-            style={{
-              ...buttonStyle,
-              marginTop: '10px',
-              backgroundColor: '#4CAF50',
-            }}
-          >
-            Copy Link
-          </button>
-        </div>
-      )}
+      <img src={spacedog} alt="Space Dog" style={{ width: '300px', height: '300px', objectFit: 'cover', marginBottom: '20px' }} />
     </div>
   );
-};
-
-const buttonStyle: React.CSSProperties = {
-  backgroundColor: '#3b3b5e',
-  color: '#fff',
-  padding: '12px 20px',
-  borderRadius: '8px',
-  border: 'none',
-  fontSize: '16px',
-  cursor: 'pointer',
-  transition: 'background-color 0.3s',
-  width: '80%',
-  maxWidth: '300px',
 };
 
 export default AutoPoints;
