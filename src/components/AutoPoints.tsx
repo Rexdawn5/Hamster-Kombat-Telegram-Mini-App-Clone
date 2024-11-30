@@ -19,11 +19,11 @@ declare global {
 }
 
 const AutoPoints: React.FC = () => {
-  const [points, setPoints] = useState<number>(2500);
+  const [points, setPoints] = useState<number>(2500);  // Local points state
   const [username, setUsername] = useState<string>('Guest');
   const [userId, setUserId] = useState<string>(''); 
   const [isTaskbarOpen, setIsTaskbarOpen] = useState<boolean>(false); 
-  const [notification, setNotification] = useState<string>(''); // For the pop-up notification
+  const [notification, setNotification] = useState<string>(''); // Notification for points update
 
   useEffect(() => {
     const tg = window.Telegram.WebApp;
@@ -42,63 +42,47 @@ const AutoPoints: React.FC = () => {
           set(userRef, { points: 2500, username: fetchedUsername }).catch(console.error);
         } else {
           const data = snapshot.val();
-          setPoints(data.points || 2500);
+          setPoints(data.points || 2500); // Ensure points are set correctly from Firebase
           setUsername(data.username || fetchedUsername);
         }
       });
     } else {
       console.error('User data not found in Telegram Web App context');
     }
-  }, []);
+  }, []); // This effect runs once, when the component mounts
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const newPoints = points + 500;
-      setPoints(newPoints);
-      update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-      showNotification('🎉 500 points added! 🚀'); // Display notification when points are added
-    }, 21 * 60 * 60 * 1000);
+    if (userId) {
+      const interval = setInterval(() => {
+        const newPoints = points + 500;  // Increment points every interval
+        setPoints(newPoints);
+        
+        // Update points in Firebase
+        update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
 
-    return () => clearInterval(interval);
-  }, [points, userId]);
+        // Show notification about points increment
+        showNotification('🎉 500 points added! 🚀');
+      }, 21 * 60 * 60 * 1000); // 21 hours in milliseconds
 
-  // Function to show the pop-up notification
+      return () => clearInterval(interval); // Cleanup on component unmount
+    }
+  }, [points, userId]); // Re-run the interval if points or userId changes
+
+  // Show pop-up notification
   const showNotification = (message: string) => {
     setNotification(message);
     setTimeout(() => {
-      setNotification('');
-    }, 3000); // Hide notification after 3 seconds
+      setNotification(''); // Hide notification after 3 seconds
+    }, 3000);
   };
 
   return (
-    <div
-      style={{
-        textAlign: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#000',
-        color: '#fff',
-        padding: '20px',
-      }}
-    >
-      <h1 style={{ fontSize: '28px', marginBottom: '20px' }}> {username}!</h1>
-
-      <div
-        style={{
-          backgroundColor: '#3b3b5e',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '15px',
-          margin: '10px auto',
-          width: '80%',
-          maxWidth: '400px',
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
-        }}
-      >
+    <div style={{ textAlign: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff', padding: '20px' }}>
+      <h1 style={{ fontSize: '28px', marginBottom: '20px' }}>{username}!</h1>
+      
+      <div style={{ backgroundColor: '#3b3b5e', color: '#fff', borderRadius: '8px', padding: '15px', margin: '10px auto', width: '80%', maxWidth: '400px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)' }}>
         <p style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
-          <span style={{ fontSize: '24px' }}>
-            {points.toLocaleString()}
-          </span> 
-          spdogs <span style={{ fontSize: '24px' }}>🦴</span>
+          <span style={{ fontSize: '24px' }}>{points.toLocaleString()}</span> spdogs <span style={{ fontSize: '24px' }}>🦴</span>
         </p>
       </div>
 
@@ -116,27 +100,25 @@ const AutoPoints: React.FC = () => {
 
       {/* Notification Pop-Up */}
       {notification && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: '#ff9800',
-            color: '#fff',
-            padding: '10px 20px',
-            borderRadius: '10px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            zIndex: 1000,
-          }}
-        >
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#ff9800',
+          color: '#fff',
+          padding: '10px 20px',
+          borderRadius: '10px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          zIndex: 1000,
+        }}>
           {notification}
         </div>
       )}
 
-      {/* Taskbar */}
+      {/* Taskbar and other UI elements */}
       <div>
         <button
           onClick={() => setIsTaskbarOpen(!isTaskbarOpen)}
@@ -156,72 +138,25 @@ const AutoPoints: React.FC = () => {
         </button>
 
         {isTaskbarOpen && (
-          <div
-            style={{
-              marginTop: '10px',
-              backgroundColor: '#333',
-              borderRadius: '10px',
-              padding: '10px',
-              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
-            }}
-          >
+          <div style={{ marginTop: '10px', backgroundColor: '#333', borderRadius: '10px', padding: '10px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)' }}>
+            {/* Links */}
             <div style={{ marginBottom: '10px' }}>
-              <a
-                href="https://t.me/spacedogscommunity"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  textDecoration: 'none',
-                  color: '#00bcd4',
-                }}
-              >
-                Join Telegram
-              </a>
+              <a href="https://t.me/spacedogscommunity" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#00bcd4' }}>Join Telegram</a>
             </div>
             <div style={{ marginBottom: '10px' }}>
-              <a
-                href="https://x.com/spacedogsbot"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  textDecoration: 'none',
-                  color: '#00bcd4',
-                }}
-              >
-                Join X
-              </a>
-            </div>
-
-            {/* Boost Community Section */}
-            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#444', borderRadius: '8px' }}>
-              <h3 style={{ color: '#fff' }}>Boost the Community!</h3>
-              <a
-                href="https://t.me/boost/spacedogscommunity"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  textDecoration: 'none',
-                  color: '#ff5722',
-                  fontWeight: 'bold',
-                }}
-              >
-                Boost Now!
-              </a>
+              <a href="https://x.com/spacedogsbot" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#00bcd4' }}>Join X</a>
             </div>
           </div>
         )}
       </div>
 
-      {/* Glow Animation */}
-      <style>
-        {`
-          @keyframes glowImage {
-            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
-            50% { box-shadow: 0 0 30px rgba(255, 255, 255, 1); }
-            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
-          }
-        `}
-      </style>
+      <style>{`
+        @keyframes glowImage {
+          0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+          50% { box-shadow: 0 0 30px rgba(255, 255, 255, 1); }
+          100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+        }
+      `}</style>
     </div>
   );
 };
