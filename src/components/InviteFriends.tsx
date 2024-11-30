@@ -92,18 +92,9 @@ const InviteFriends: React.FC = () => {
         <button
           onClick={handleCopyLink}
           style={{
-            backgroundColor: '#d3d3d3', // Light gray button
-            color: '#000',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            fontSize: '16px',
-            textDecoration: 'none',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-            border: 'none',
+            ...buttonStyle,
+            animation: 'glow 1.5s infinite',
           }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c0c0c0')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#d3d3d3')}
         >
           Copy Your Profile Link 🚀
         </button>
@@ -115,8 +106,36 @@ const InviteFriends: React.FC = () => {
           </p>
         )}
       </div>
+
+      {/* Glow animation */}
+      <style>
+        {`
+          @keyframes glow {
+            0% {
+              box-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+            }
+            100% {
+              box-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+            }
+          }
+        `}
+      </style>
     </div>
   );
+};
+
+const buttonStyle: React.CSSProperties = {
+  backgroundColor: '#d3d3d3', // Light gray button
+  color: '#000',
+  padding: '10px 20px',
+  borderRadius: '5px',
+  fontSize: '16px',
+  textDecoration: 'none',
+  cursor: 'pointer',
+  border: 'none',
 };
 
 export default InviteFriends;

@@ -16,9 +16,31 @@ const ConnectWallet: React.FC = () => {
       <img 
         src={walletImage} 
         alt="Wallet Coming Soon" 
-        style={{ width: '300px', height: 'auto', marginBottom: '20px' }} // Adjust the size as needed
+        style={{ 
+          width: '300px', 
+          height: 'auto', 
+          marginBottom: '20px', 
+          animation: 'glow 1.5s infinite', // Apply glow animation
+        }} 
       />
       <h1></h1>
+
+      {/* Glow animation */}
+      <style>
+        {`
+          @keyframes glow {
+            0% {
+              box-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+            }
+            100% {
+              box-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

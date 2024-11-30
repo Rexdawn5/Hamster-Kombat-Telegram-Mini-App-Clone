@@ -19,10 +19,11 @@ declare global {
 }
 
 const AutoPoints: React.FC = () => {
-  const [points, setPoints] = useState<number>(2500); // Default points
-  const [username, setUsername] = useState<string>('Guest'); // User's username
-  const [userId, setUserId] = useState<string>(''); // User's Telegram ID
-  const [isUsernameInputVisible, setIsUsernameInputVisible] = useState<boolean>(false);
+  const [points, setPoints] = useState<number>(2500);
+  const [username, setUsername] = useState<string>('Guest');
+  const [userId, setUserId] = useState<string>(''); 
+  const [isTaskbarOpen, setIsTaskbarOpen] = useState<boolean>(false); 
+  const [notification, setNotification] = useState<string>(''); // For the pop-up notification
 
   useEffect(() => {
     const tg = window.Telegram.WebApp;
@@ -35,14 +36,10 @@ const AutoPoints: React.FC = () => {
       setUserId(telegramId);
       setUsername(fetchedUsername);
 
-      // Initialize or sync user data with Firebase
       const userRef = ref(database, `users/${telegramId}`);
       onValue(userRef, (snapshot) => {
         if (!snapshot.exists()) {
-          set(userRef, {
-            points: 2500,
-            username: fetchedUsername,
-          }).catch(console.error);
+          set(userRef, { points: 2500, username: fetchedUsername }).catch(console.error);
         } else {
           const data = snapshot.val();
           setPoints(data.points || 2500);
@@ -54,21 +51,23 @@ const AutoPoints: React.FC = () => {
     }
   }, []);
 
-  // Increment points every 21 hours
   useEffect(() => {
     const interval = setInterval(() => {
       const newPoints = points + 500;
       setPoints(newPoints);
       update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-    }, 21 * 60 * 60 * 1000); // 21 hours
+      showNotification('🎉 500 points added! 🚀'); // Display notification when points are added
+    }, 21 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [points, userId]);
 
-  const saveUsername = () => {
-    if (username.trim() && userId) {
-      update(ref(database, `users/${userId}`), { username }).catch(console.error);
-    }
+  // Function to show the pop-up notification
+  const showNotification = (message: string) => {
+    setNotification(message);
+    setTimeout(() => {
+      setNotification('');
+    }, 3000); // Hide notification after 3 seconds
   };
 
   return (
@@ -76,72 +75,153 @@ const AutoPoints: React.FC = () => {
       style={{
         textAlign: 'center',
         minHeight: '100vh',
-        backgroundColor: '#000', // Black background
-        color: '#fff', // White text for contrast
+        backgroundColor: '#000',
+        color: '#fff',
         padding: '20px',
       }}
     >
-      <h1 style={{ fontSize: '28px', marginBottom: '20px' }}>Welcome, {username}!</h1>
-      <p style={{ fontSize: '18px', marginBottom: '30px' }}>
-        Your Points: <strong>{points.toLocaleString()} spdogs</strong>
-      </p>
+      <h1 style={{ fontSize: '28px', marginBottom: '20px' }}> {username}!</h1>
+
+      <div
+        style={{
+          backgroundColor: '#3b3b5e',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '15px',
+          margin: '10px auto',
+          width: '80%',
+          maxWidth: '400px',
+          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <p style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
+          <span style={{ fontSize: '24px' }}>
+            {points.toLocaleString()}
+          </span> 
+          spdogs <span style={{ fontSize: '24px' }}>🦴</span>
+        </p>
+      </div>
+
       <img
         src={spacedog}
         alt="Space Dog"
-        style={{ width: '300px', margin: '20px auto', borderRadius: '10px', boxShadow: '0 4px 8px rgba(255, 255, 255, 0.2)' }}
+        style={{
+          width: '300px',
+          margin: '20px auto',
+          borderRadius: '10px',
+          boxShadow: '0 4px 8px rgba(255, 255, 255, 0.2)',
+          animation: 'glowImage 1.5s infinite',
+        }}
       />
-      {isUsernameInputVisible && (
-        <div style={{ marginBottom: '20px' }}>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
-            style={{
-              padding: '10px',
-              borderRadius: '5px',
-              border: '1px solid #fff',
-              backgroundColor: '#333',
-              color: '#fff',
-              width: '80%',
-              textAlign: 'center',
-            }}
-          />
-          <button
-            onClick={saveUsername}
-            style={{
-              padding: '10px 20px',
-              marginLeft: '10px',
-              borderRadius: '5px',
-              border: 'none',
-              backgroundColor: '#00bcd4', // Cyan for a modern touch
-              color: '#000',
-              cursor: 'pointer',
-              transition: 'background-color 0.3s',
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#008c9e')}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#00bcd4')}
-          >
-            Save
-          </button>
+
+      {/* Notification Pop-Up */}
+      {notification && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#ff9800',
+            color: '#fff',
+            padding: '10px 20px',
+            borderRadius: '10px',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            zIndex: 1000,
+          }}
+        >
+          {notification}
         </div>
       )}
-      <button
-        onClick={() => setIsUsernameInputVisible(!isUsernameInputVisible)}
-        style={{
-          padding: '10px 20px',
-          borderRadius: '5px',
-          border: 'none',
-          backgroundColor: '#f44336', // Red for action
-          color: '#fff',
-          cursor: 'pointer',
-          transition: 'background-color 0.3s',
-        }}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#c62828')}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#f44336')}
-      >
-        {isUsernameInputVisible ? 'Hide Input' : 'Set Username'}
-      </button>
+
+      {/* Taskbar */}
+      <div>
+        <button
+          onClick={() => setIsTaskbarOpen(!isTaskbarOpen)}
+          style={{
+            marginTop: '20px',
+            padding: '15px 25px',
+            borderRadius: '15px',
+            border: 'none',
+            backgroundColor: '#5c6bc0',
+            color: '#fff',
+            cursor: 'pointer',
+            boxShadow: '0 0 15px 3px rgba(92, 107, 192, 0.6)',
+            animation: 'glow 1.5s infinite',
+          }}
+        >
+          {isTaskbarOpen ? 'Close Task' : 'Task'}
+        </button>
+
+        {isTaskbarOpen && (
+          <div
+            style={{
+              marginTop: '10px',
+              backgroundColor: '#333',
+              borderRadius: '10px',
+              padding: '10px',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <div style={{ marginBottom: '10px' }}>
+              <a
+                href="https://t.me/spacedogscommunity"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: 'none',
+                  color: '#00bcd4',
+                }}
+              >
+                Join Telegram
+              </a>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <a
+                href="https://x.com/spacedogsbot"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: 'none',
+                  color: '#00bcd4',
+                }}
+              >
+                Join X
+              </a>
+            </div>
+
+            {/* Boost Community Section */}
+            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#444', borderRadius: '8px' }}>
+              <h3 style={{ color: '#fff' }}>Boost the Community!</h3>
+              <a
+                href="https://t.me/boost/spacedogscommunity"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: 'none',
+                  color: '#ff5722',
+                  fontWeight: 'bold',
+                }}
+              >
+                Boost Now!
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Glow Animation */}
+      <style>
+        {`
+          @keyframes glowImage {
+            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(255, 255, 255, 1); }
+            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+          }
+        `}
+      </style>
     </div>
   );
 };
