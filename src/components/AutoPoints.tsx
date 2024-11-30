@@ -23,7 +23,6 @@ const AutoPoints: React.FC = () => {
   const [username, setUsername] = useState<string>('Guest');
   const [userId, setUserId] = useState<string>(''); 
   const [isTaskbarOpen, setIsTaskbarOpen] = useState<boolean>(false); 
-  const [notification, setNotification] = useState<string>(''); // Notification for points update
 
   useEffect(() => {
     const tg = window.Telegram.WebApp;
@@ -37,44 +36,36 @@ const AutoPoints: React.FC = () => {
       setUsername(fetchedUsername);
 
       const userRef = ref(database, `users/${telegramId}`);
+      // Real-time listener to keep points up-to-date
       onValue(userRef, (snapshot) => {
-        if (!snapshot.exists()) {
-          set(userRef, { points: 2500, username: fetchedUsername }).catch(console.error);
-        } else {
+        if (snapshot.exists()) {
           const data = snapshot.val();
-          setPoints(data.points || 2500); // Ensure points are set correctly from Firebase
-          setUsername(data.username || fetchedUsername);
+          setPoints(data.points || 2500); // Set points from Firebase
+          setUsername(data.username || fetchedUsername); // Set username
+        } else {
+          // Initialize user if they don't exist in Firebase
+          set(userRef, { points: 2500, username: fetchedUsername }).catch(console.error);
         }
       });
     } else {
       console.error('User data not found in Telegram Web App context');
     }
-  }, []); // This effect runs once, when the component mounts
+  }, []); // Runs once when the component mounts
 
   useEffect(() => {
     if (userId) {
+      // Increment points every 21 hours and update Firebase
       const interval = setInterval(() => {
-        const newPoints = points + 500;  // Increment points every interval
+        const newPoints = points + 500;
         setPoints(newPoints);
         
         // Update points in Firebase
         update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-
-        // Show notification about points increment
-        showNotification('🎉 500 points added! 🚀');
       }, 21 * 60 * 60 * 1000); // 21 hours in milliseconds
 
       return () => clearInterval(interval); // Cleanup on component unmount
     }
-  }, [points, userId]); // Re-run the interval if points or userId changes
-
-  // Show pop-up notification
-  const showNotification = (message: string) => {
-    setNotification(message);
-    setTimeout(() => {
-      setNotification(''); // Hide notification after 3 seconds
-    }, 3000);
-  };
+  }, [points, userId]); // Re-run if points or userId change
 
   return (
     <div style={{ textAlign: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff', padding: '20px' }}>
@@ -97,26 +88,6 @@ const AutoPoints: React.FC = () => {
           animation: 'glowImage 1.5s infinite',
         }}
       />
-
-      {/* Notification Pop-Up */}
-      {notification && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#ff9800',
-          color: '#fff',
-          padding: '10px 20px',
-          borderRadius: '10px',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          zIndex: 1000,
-        }}>
-          {notification}
-        </div>
-      )}
 
       {/* Taskbar and other UI elements */}
       <div>

@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set } from 'firebase/database';
-import database from '../firebaseConfig'; // Ensure you have your Firebase config setup
 
 declare global {
   interface Window {
@@ -32,14 +30,6 @@ const InviteFriends: React.FC = () => {
       // Generate the dynamic profile link
       const dynamicLink = `https://t.me/SpDogsBot/start?ref=${telegramId}_${username}`;
       setProfileLink(dynamicLink);
-
-      // Save user data to Firebase
-      const userRef = ref(database, `users/${telegramId}`);
-      set(userRef, {
-        username: username,
-        inviteLink: dynamicLink,
-        createdAt: new Date().toISOString(),
-      }).catch(console.error);
     } else {
       setProfileLink('https://t.me/SpDogsBot/start'); // Default fallback link
     }
