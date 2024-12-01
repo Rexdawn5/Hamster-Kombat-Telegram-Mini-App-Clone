@@ -19,7 +19,7 @@ declare global {
 }
 
 const AutoPoints: React.FC = () => {
-  const [points, setPoints] = useState<number>(2500);  // Local points state
+  const [points, setPoints] = useState<number>(2500); // Local points state
   const [username, setUsername] = useState<string>('Guest');
   const [userId, setUserId] = useState<string>(''); 
   const [isTaskbarOpen, setIsTaskbarOpen] = useState<boolean>(false); 
@@ -116,6 +116,9 @@ const AutoPoints: React.FC = () => {
             </div>
             <div style={{ marginBottom: '10px' }}>
               <a href="https://x.com/spacedogsbot" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#00bcd4' }}>Join X</a>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <a href="https://t.me/boost/spacedogscommunity" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#00bcd4' }}>Boost Community</a>
             </div>
           </div>
         )}

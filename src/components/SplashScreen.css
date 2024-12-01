@@ -1,0 +1,28 @@
+.splash-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: #000; /* Solid black background */
+    color: white;
+    font-family: Arial, sans-serif;
+  }
+  
+  .logo-image {
+    width: 500px;
+    height: auto;
+    margin-bottom: 30px;
+  }
+  
+  .loading-text {
+    font-size: 18px;
+    animation: blink 1.5s infinite;
+  }
+  
+  @keyframes blink {
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
