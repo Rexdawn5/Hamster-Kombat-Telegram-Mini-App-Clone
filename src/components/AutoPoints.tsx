@@ -36,36 +36,43 @@ const AutoPoints: React.FC = () => {
       setUsername(fetchedUsername);
 
       const userRef = ref(database, `users/${telegramId}`);
+
       // Real-time listener to keep points up-to-date
       onValue(userRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setPoints(data.points || 2500); // Set points from Firebase
-          setUsername(data.username || fetchedUsername); // Set username
+          setPoints(data.points || 2500);
+          setUsername(data.username || fetchedUsername);
+
+          // Check last reward time
+          const lastRewardTime = data.lastRewardTime || 0;
+          const currentTime = Date.now();
+          const fifteenHoursInMs = 15 * 60 * 60 * 1000;
+
+          if (currentTime - lastRewardTime >= fifteenHoursInMs) {
+            const newPoints = (data.points || 2500) + 500;
+
+            // Update points and last reward time
+            update(userRef, {
+              points: newPoints,
+              lastRewardTime: currentTime,
+            }).catch(console.error);
+
+            setPoints(newPoints); // Update local state
+          }
         } else {
-          // Initialize user if they don't exist in Firebase
-          set(userRef, { points: 2500, username: fetchedUsername }).catch(console.error);
+          // Initialize user in Firebase
+          set(userRef, {
+            points: 2500,
+            username: fetchedUsername,
+            lastRewardTime: 0,
+          }).catch(console.error);
         }
       });
     } else {
       console.error('User data not found in Telegram Web App context');
     }
   }, []); // Runs once when the component mounts
-
-  useEffect(() => {
-    if (userId) {
-      // Increment points every 21 hours and update Firebase
-      const interval = setInterval(() => {
-        const newPoints = points + 500;
-        setPoints(newPoints);
-        
-        // Update points in Firebase
-        update(ref(database, `users/${userId}`), { points: newPoints }).catch(console.error);
-      }, 21 * 60 * 60 * 1000); // 21 hours in milliseconds
-
-      return () => clearInterval(interval); // Cleanup on component unmount
-    }
-  }, [points, userId]); // Re-run if points or userId change
 
   return (
     <div style={{ textAlign: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff', padding: '20px' }}>
